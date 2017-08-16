@@ -1,0 +1,153 @@
+\section{Branch and Bound for 0--1 Loss}
+\label{cha:branchandbound}
+
+Branch and bound techniques (\BB)~\cite{bandb} are a staple of the
+literature on discrete optimization via search methods.  This section
+shows how to formulate the 0--1 loss problem in a \BB\ setting along
+with heuristics and pruning techniques that allow it to efficiently
+find an optimal 0--1 loss solution.
+
+Following from the definition of the training objective
+from~\eqref{eq:objective} w.r.t. 0--1 loss in~\eqref{eq:loss01},
+the 0--1 loss optimization problem can be written as
+\begin{equation}
+L(\w) = \sum_{i=1}^N \mathbb{I} [t_i \w^T \xi \leq 0] = \sum_{i=1}^N l_i, \label{eq:loss01_data}
+\end{equation}
+where $l_i =\mathbb{I} [t_i \w^T \xi \leq 0]$ denotes the individual
+0--1 loss of point $\xi$.  Then we have
+\[ \begin{split}
+l_i = 0 &\Leftrightarrow t_i \w^T \xi > 0 \\
+l_i = 1 &\Leftrightarrow t_i \w^T \xi \leq 0. \\
+\end{split} \] 
+Furthermore, let $\l=(l_1, l_2, \dots, l_N)$ be the \emph{loss vector}
+consisting of all individual losses. It can be seen that a specific
+assignment of the loss vector corresponds to a system of linear
+inequalities. For example, the loss vector $\l=(0,1,0)$ for training
+data of $N=3$ points provides 
+$\{ t_1 \w^T \x_1 > 0, t_2 \w^T \x_2 \leq 0, t_3 \w^T \x_3 > 0 \}$, 
+where $t_1, t_2, t_3, \x_1, \x_2, \x_3$ are constants given by the
+data, resulting in a system of linear inequalities.
+
+Thus, the 0--1 loss optimization problem is now equivalent to finding
+a feasible loss vector $\l^*$ with a minimal sum of its components
+(which is the sum of 0--1 losses):
+\begin{equation}
+\l^* = \text{arg min}_{\l : \text{ feasible}} \sum_{i=1}^N l_i. \label{eq:bb_obj}
+\end{equation}
+Once we have obtained $\l^*$, we need to recover optimal hyperplane
+parameters $\w^*$, which are insensitive to scaling.  Hence, we fix
+$w_0$ at either $1$ or $-1$\footnote{$w_0 = 0$ would imply the optimal
+  hyperplane goes through the origin, which is highly unlikely in
+  practice.  Nonetheless $w_0 = 0$ could also be tested for
+  completeness.} (whichever yields a feasible solution) and call a
+linear program (LP) solver to minimize $\sum_{i=1}^D w_i$ 
+(to obtain a unique solution) subject to the constraints induced by $\l^*$.
+
+%=================================================
+\begin{algorithm}[t!]
+%\vspace{-3mm}
+\caption{Branch and Bound Search (BnB)}
+\label{alg:BnB.Final}
+{\footnotesize
+\begin{algorithmic}[1]
+\INPUT {Training data $(\boldsymbol{X},\t)$}
+\OUTPUT {Weights $\w^*$ minimizing 0--1 loss}
+\FUNCTION {{\sc Find-Optimal-01Loss-BnB}($\X, \t$)}
+\STATE $\tilde{\w} \gets \w^*_{\mathit{SVM}}$ from SVM solution for $(\boldsymbol{X},\t)$
+\STATE $\tilde{\l} \gets $ loss vector implied by $\tilde{\w}$
+\STATE $\w^* \gets \tilde{\w}$
+\STATE $loss_{min} \gets \sum_{i=1}^N \tilde{l}_i$ \COMMENT{Set initial bound to $L(\tilde{\w})$}
+\STATE $\l_\emptyset \gets $ all decisions $l_i$ unassigned
+\STATE {\sc Branch-and-Bound}($\l_\emptyset$)
+\STATE {\bfseries return} $\w^*$
+\STATE
+\FUNCTION {{\sc Branch-and-Bound}($\l$)}
+   \IF {(all components of $\l$ are assigned)}
+      \STATE $\w^* \gets$ LP solution for $\l$ 
+      \STATE $loss_{min} \gets loss$
+   \ELSE
+      \STATE $i \gets \argmax_{i \text{unassigned} \in \l} |\tilde{\w}^T\boldsymbol{x_i}|$
+      \STATE $\l' \gets$ {\sc Propagate-Loss} $(\l, i, \tilde{l}_i)$
+      \IF {$\sum_i l_i' < loss_{min}$}
+         \STATE {\sc Branch-and-Bound}{$(\l')$}
+      \ENDIF
+      \STATE $\l' \gets$ {\sc Propagate-Loss}{$(\l, i, 1 - \tilde{l}_i)$}
+      \IF {$\sum_i l_i' < loss_{min}$}
+         \STATE {\sc Branch-and-Bound}{($\l'$)}
+      \ENDIF
+   \ENDIF
+\ENDFUNCTION
+\STATE
+\FUNCTION {{\sc Propagate-Loss}($\l, i, lossValue$)} 
+   \STATE $\l' \gets \l$
+   \STATE $l_i' \gets lossValue$   
+   \STATE $\t' \gets $ targets prediction vector implied by $\l'$ 
+   \STATE Let $\Phi =$ convex hull of $\{ \boldsymbol{x_k} \; | \; t_k'=t_i' \}$ 
+   \IF {$\exists \boldsymbol{x_j} \in \Phi$ s.t. $t_j' = -t_j$}
+      \STATE $l_i' \gets +\infty$ \COMMENT{conflict -- infeasible}
+   \ELSE
+   \FOR{p:=1 \text{ {\bf to} } N}
+      \IF{$\boldsymbol{x_p} \in \Phi$ AND $l_p$ unassigned}
+         \STATE $t_p' \gets t_i'$ \COMMENT{propagate assignment}
+         \STATE $l_p' \gets \mathbb{I} [t_p' \not= t_p]$
+      \ENDIF
+   \ENDFOR
+   \ENDIF  
+   \STATE {\bfseries return} $\l'$ \COMMENT{implied loss vector assignments}
+\ENDFUNCTION
+\ENDFUNCTION
+\end{algorithmic}
+}
+%\vspace{-4mm}
+\end{algorithm}
+%=================================================
+
+In Algorithm~\ref{alg:BnB.Final} we provide the full BnB algorithm that
+searches for the optimal $\l^*$ from~\eqref{eq:bb_obj}.  The key idea
+of the algorithm is to build a search tree of assignments while
+tracking the minimum loss solution $\w^*$ and value $loss_{min}$ to
+prune provably suboptimal branches of the search.  To make this
+algorithm efficient, we propose the following heuristic improvements:
+
+\noindent \emph{Initial Bound Approximation:} In line 2, we run a fast
+SVM solver on the full data to obtain an initial best solution $\w^*$
+and $loss_{min}$.  Clearly this should prune a large portion of the
+search space and guarantees that \BB\ will do at least as well as
+the SVM.
+
+\noindent \emph{Decision Ordering:} It is well-known that the ordering
+of decision and value assignments in \BB\ can drastically affect
+search efficiency.  Fortunately, having an approximated decision
+hyperplane from the initial SVM solution helps to determine the
+assignment and value ordering. Under the assumption that the optimal
+decision hyperplane is somewhat near the approximated hyperplane, the
+loss values of points that lie closer to the approximated hyperplane
+are more likely to be changed than those that are far away.  Hence in
+line 14, the points $\x_i$ farthest from the initial approximated
+decision hyperplane $\tilde{\w}$ are assigned first, and their inital
+value is assigned to be consistent with the assignment $\tilde{l}_i$
+of the initial SVM solution.
+
+\noindent \emph{Loss Propagation:} In any partial assignment to $\l$,
+points \emph{within} the convex hull defined by the set of $\x_i$
+assigned true in $\l$ are implied to be true and similarly for the
+false case.  Hence at every branch of \BB\ we utilize the technique of
+\emph{forward checking} by calling \textsc{Propagate-Loss} (lines 15
+and 19) to augment $\l$ with any implied assigments that prune future
+search steps or to detect whether an assignment conflict has been
+found leading to infeasibility.  We also use the sum of forced and
+assigned components of the loss vector as a lower bound for purposes
+of pruning suboptimal branches (lines 16 and 19).
+
+To detect whether a point $\p \in \R^D$ is an interior point
+of the convex hull created by other points $\p_1,
+\p_2, \dots, \p_k \in \R^D$, we simply check whether 
+the following linear constraints over
+$\mathbf{u}$ are feasible (e.g., by calling an LP solver):
+$$
+u_i \geq 0 \text{ for } i = 1,2, \dots, k \land \sum_{i=1}^k u_i = 1 \land \sum_{i=1}^k u_i \p_i = \p. 
+$$ If a feasible $\mathbf{u}$ exists, then point $\p$
+is a convex combination of points $\p_1, \p_2, \dots,
+\p_k$ (with coefficients $u_1, \dots, u_k$), therefore $\p$ lies in the convex hull of points $\p_1, \p_2, \dots,
+\p_k$, otherwise it does not.
+

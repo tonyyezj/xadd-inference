@@ -1,0 +1,137 @@
+\documentclass[]{article}
+
+% The file proceed2e.sty is the style file for UAI-13.
+\usepackage{proceed2e}
+
+%File with description of bibliography style "named"
+\usepackage{named}
+% Use the postscript times font!
+%\usepackage{times}
+
+%% LinXADD packages
+%Algorithm Options
+\usepackage[vlined,algoruled,linesnumbered,titlenumbered]{algorithm2e} 
+\usepackage{verbatim}
+
+% Graph options
+%\usepackage{tikz}
+%\usetikzlibrary{arrows,shapes,snakes,automata,backgrounds,petri}
+
+%\usepackage{lpic}
+%\usepackage{pinlabel}
+\usepackage{graphicx} 
+\usepackage{subfigure}
+\usepackage{caption}
+
+\hfuzz=1.002in
+\overfullrule=3mm
+\hbadness=10000
+
+\usepackage{amsmath,amssymb} 
+%\usepackage[T1]{fontenc} 
+%\usepackage[applemac]{inputenc}
+
+\newcommand{\MarsRover}{\textsc{Mars Rover}}
+\newcommand{\MarsRoverUni}{\textsc{Mars Rover1D}}
+\newcommand{\MarsRoverBi}{\textsc{Mars Rover2D}}
+\newcommand{\Invent}{\textsc{Inventory Control}}
+\newcommand{\PT}{\mathit{Polytope}}
+\newcommand{\Open}{\mathit{Open}}
+\newcommand{\Merge}{\mathit{merge}}
+\newcommand{\Error}{\mathit{error}}
+
+\renewcommand{\l}{\langle}
+\renewcommand{\r}{\rangle}
+\newcommand{\true}{\mathit{true}}
+\newcommand{\false}{\mathit{false}}
+\newcommand{\casemax}{\mathrm{casemax}}
+\newcommand{\casemin}{\mathrm{casemin}}
+\def\argmax{\operatornamewithlimits{arg\,max}}
+\def\argmin{\operatornamewithlimits{arg\,min}}
+\renewcommand{\vec}[1]{\boldsymbol{#1}}
+\newcommand{\mb}{\begin{bmatrix}}
+\newcommand{\me}{\end{bmatrix}}
+
+\title{	Bounded Approximate Symbolic Dynamic Programming\\ for Hybrid MDPs }
+
+%\author{Anonymous}
+\author{Luis Gustavo Rocha Vianna\\ 
+University of Sao Paulo\\
+Sao Paulo, Brazil\\
+ludygrv@ime.usp.br
+\And
+Scott Sanner\\
+NICTA \& ANU\\
+Canberra, Australia\\
+ssanner@nicta.com.au
+\And
+Leliane Nunes de Barros\\
+University of Sao Paulo\\
+Sao Paulo, Brazil\\
+leliane@ime.usp.br}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Recent advances in symbolic dynamic programming (SDP) combined with
+the extended algebraic decision diagram (XADD) data structure have
+provided exact solutions for mixed discrete and continuous (hybrid)
+MDPs with piecewise linear dynamics and continuous actions.  Since
+XADD-based exact solutions may grow intractably large for many
+problems, we propose a bounded error compression technique for XADDs
+that involves the solution of a constrained bilinear saddle point
+problem.  Fortuitously, we show that given the special structure of
+this problem, it can be expressed as a bilevel linear programming
+problem and solved to optimality in finite time via constraint
+generation, despite having an infinite set of constraints.  This
+solution permits the use of efficient linear program solvers for XADD
+compression and enables a novel class of bounded approximate SDP
+algorithms for hybrid MDPs that empirically offers order-of-magnitude
+speedups over the exact solution in exchange for a small approximation
+error.
+\end{abstract}
+
+\section{Introduction}
+
+\input 1introduction.tex
+
+\section{Extended Algebraic Decision Diagrams (XADDs)}
+
+\input 2xadd.tex
+
+\section{Bounded XADD Approximation}
+
+\input 3approx.tex
+
+\section{Bounded Approximate Symbolic Dynamic Programming}
+
+\input 4basdp.tex
+
+\section{Empirical Results}
+
+\input 5empirical.tex
+
+\section{Related Work}
+
+\input 6related_work.tex
+
+\section{Concluding Remarks}
+
+\input 7conclusion.tex
+
+\section*{Acknowledgments}
+NICTA is funded by the
+ Australian Government as represented by
+the Department of Broadband, Communications and the Digital
+Economy and the Australian Research Council through the ICT
+Centre of Excellence program. This work was supported by 
+the Brazillian agency FAPESP (grant 2012/10861-0).
+
+%\newpage
+
+\bibliographystyle{plain}
+\bibliography{xaddapprox}
+\end{document}
+

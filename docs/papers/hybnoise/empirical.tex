@@ -1,0 +1,196 @@
+﻿%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure*}[tbp!]
+%\vspace{-2mm}
+\centering
+\includegraphics[width=0.33\textwidth]{Figures/reserV7.pdf}
+\includegraphics[width=0.33\textwidth]{Figures/telesV4.pdf}
+\includegraphics[width=0.33\textwidth]{Figures/uavV4.pdf}
+\vspace{-6mm}
+\caption{\footnotesize
+{\it (left)}  $V^7(l_1,\vec{b}=0)$ \textsc{Reservoir Control} problem;
+{\it (middle)} $V^4(k,v,z=true,g=false)$ \textsc{Space Telescope Control} problem.
+{\it (right)}  $V^4(x,y,l=false)$ \textsc{UAV Navigation} problem;
+}
+\label{fig:Value}
+%\vspace{-5mm}
+\end{figure*}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[tbp!]
+\vspace{-2mm}
+\centering
+
+\includegraphics[width=0.42\textwidth]{Figures/Nodes.pdf}\\
+\vspace{-2mm}
+\includegraphics[width=0.42\textwidth]{Figures/Time.pdf}
+
+\vspace{-2mm}
+\caption{\footnotesize Space and elapsed time (between current and previous horizon) vs. horizon.
+}
+\label{fig:SpaceTime}
+\vspace{-4mm}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\label{sec:results}
+
+We evaluated Robust SDP on the \textsc{Reservoir Control} problem used as a running example,
+a \textsc{UAV Navigation} problem  and
+a \textsc{Space Telescope Control} problem --- all highly risk-sensitive and uncertain
+decision-making problems as described below.\footnote{We 
+note that all Java source code and a
+human/machine readable file format for all domains needed to reproduce
+the results in this paper can be found publicly online at
+\emph{link suppressed to maintain anonymity}.} % \texttt{http://code.google.com/p/xadd-inference}
+
+Figure \ref{fig:Value} (left) shows the value function for the
+\textsc{Reservoir Control} problem in horizon seven. We can observe
+that we can gain approximately 11000 units of reward if the reservoir
+begins with a water level approximately equal to 3000 at day zero.
+Otherwise, a lower initial starting state or the need to drain when
+the reservoir is near full lead to lower rewards for all states.
+Discontinuities in the value function occur at critical points where
+the policy changes over the time horizon.
+
+%{\bf \textsc{Reservoir Control}:} Reservoir management is a well-studied in
+%OR~\cite{Mahootchi2009,Yeh1985}.  In this domain we decided between
+%\emph{drain} (or \emph{not drain}) each reservoir to maximize
+%electricity revenue over the decision-stage horizon while avoiding
+%reservoir overflow and underflow.
+
+%We solve a 2-reservoir problem with
+%levels $(l_1,l_2)\in [0,\infty]^2$ with reward penalties for
+%overflow and underflow and a reward gain of 1, i.e.:
+
+
+%{\footnotesize
+%\begin{align*}
+%R & = \begin{cases}
+%(l_1 \leq 4500) \wedge (l_2 \leq 4500) \wedge (l_1 \geq 200) \wedge (l_2 \geq 200) &:1\\
+%else &: -\infty\\
+%\end{cases}
+%\end{align*}}
+
+
+%The electricity is generated in periods when the $\mathit{drain}()$ action
+%drains water from $l_2$ to $l_1$, the other action is
+%$\mathit{no}$-$\mathit{drain}()$); we assume a daily control,  four days are wet and the next four days are dry (we use three discrete variables to %count the day $d_1$, $d_2$, $d_3$), the rainfall
+%replenishment depends on that and is modeled by the noise:
+%{\footnotesize
+%\begin{align*}
+%n & = \begin{cases}
+%(d_1) \wedge (n \leq 2000) \wedge (n \geq 1200) &:legal\\
+%\neg (d_1) \wedge (n \leq 400) \wedge (n \geq 0) &:legal\\
+%else &: illegal\\
+%\end{cases}
+%\end{align*}}
+
+
+%The transition function for levels of the $\mathit{drain}$ action are
+%{\footnotesize
+%\begin{align*}
+%l_1' & =(n + l_1 - 2800 + 2000) \\
+%l_2'& =(n + l_2 - 2000)
+%\end{align*}}
+%while for $\mathit{no}$-$\mathit{drain}$ action, the $\mathit{2000}$ term is dropped.
+
+{\bf \textsc{Space Telescope Control}:} We have extended the problem
+of slewing a space telescope in order to look a new objective as given
+in \cite{DLohr:2012}. This problem has six actions $a_0, \cdots ,a_5$
+that change the continuous angle $k$ and angular rate $v$.  The
+problem has one boolean state variable $z$ for the telescope zoom
+state, one $g$ for reaching the goal state, and one continuous noise
+variable.  To model noise in this problem, we have only modified the
+transition function for the $a_5$ action in the description
+from~\cite{DLohr:2012} (which could not handle noise) to add noise
+$n$ when $v < 1$ $\frac{deg}{seg}$ and $z=false$ yielding state
+updates for $a_5$ as follows: {\footnotesize
+\begin{align*}
+k' & =( k + 40.55*v) \\
+v'& =(2/3 v + n) \\
+z'& =( true ),
+\end{align*}}
+We model the noise in the transition function of the angular
+velocity $v$ for $a_5$ (which changes the zoom of the telescope and for which
+the dynamical model is only approximate) as follows:
+{\footnotesize
+\begin{align*}
+n & = \begin{cases}
+\neg (z) \wedge (n \leq 0.04*v) \wedge (n \geq -0.04*v) &:-\infty\\
+else &: +\infty\\
+\end{cases}
+\end{align*}}
+where we note that noise depends linearly on the angular velocity.
+
+The reward for actions $a_0, \cdots ,a_5$ is given by
+{\tiny
+\begin{align*}
+R & = \begin{cases}
+(z) \wedge (v \! \leq \! 0.02) \wedge (k \! \leq \! 1.683) \wedge (v \! \geq \! -0.02) \wedge (k \! \geq \! 1.283) &\!\!:100\\
+else &: -\mathit{cost}(a)\\
+\end{cases}
+\end{align*}}
+where the $\mathit{cost}(a)$ of action $a_0$ is 0, $1$ for actions
+$a_i$ $i \in \{1,2,3,4\}$ and $10$ for action $a_5$.  
+Figure \ref{fig:Value} (middle) shows the value function for the
+horizon four. We observe there are states with low angular
+rate (approximately $-0.04\leq v \leq 0.04$) that have a policy to
+achieve a goal (a reward of 100) with high certainty over this
+horizon.
+
+{\bf \textsc{UAV Navigation}:}
+In this problem a UAV needs to be able to plan trajectories that take
+the aircraft from its current location to a goal given constraints on
+time or fuel consumption and known areas of state-dependent turbulence
+(e.g., from localized weather events).
+
+The state consists of a UAV´s continuous position $x$ and $y$ and a
+boolean variable $l$ indicating whether it has landed.  In a given
+time step, the UAV may move a continuous distance $a_x \in [-40,40]$
+and $a_y \in [-40,40]$. The turbulence introduces noise $n_x$ and
+$n_y$ in the $a_x$ and $a_y$ movements, given by: {\footnotesize
+\begin{align*}
+n_x & = \begin{cases}
+(y \geq 50 + x) \wedge (n_x \leq -20) \wedge (n_x \geq 20) &:-\infty\\
+(y < 50 + x) \wedge (n_x \leq -5) \wedge (n_x \geq 5) &:-\infty\\
+else &: +\infty\\
+\end{cases}\\
+n_y & = \begin{cases}
+(y \geq 50 + x) \wedge (n_y \leq -20) \wedge (n_y \geq 20) &:-\infty\\
+(y < 50 + x) \wedge (n_y \leq -5) \wedge (n_y \geq 5) &:-\infty\\
+else &: +\infty\\
+\end{cases}
+\end{align*}}
+The UAV goal is to achieve the region $x+y > 200$. It receives a
+reward penalty ($-\infty$) for being in positions from which a UAV
+with a given amount of fuel reserves cannot return to its landing
+strip with high certainty. 
+%added
+{\footnotesize
+\begin{align*}
+R & = \begin{cases}
+(l) \wedge (x \leq 130) \wedge (y \leq 130) \wedge (x \geq 0) \wedge (y \geq 0) & \!\! :0\\
+(\neg l) \wedge (x \leq 130) \wedge (y \leq 130) \wedge (x \geq 0) \wedge (y \geq 0) & \!\! :-20\\
+else &: -\infty\\
+\end{cases}
+\end{align*}}
+If the UAV is not in the goal position ($\neg l$), the action
+reward is a cost of -20 fuel units for the given time period.  We note that
+with six continuous variables in the regression (2 state, 2 action, 2 noise),
+this problem is relatively high-dimensional and could not be easily solved
+via discretization methods, which also incur approximation error not encountered
+in our exact solution provided here.
+
+Figure \ref{fig:Value} (right) shows the \emph{converged} value
+function for a horizon of four time steps showing the 
+relative cost of returning to the landing strip from different
+positions with lower values near high levels of turbulence.
+
+\textbf{Time and Space:} Figure \ref{fig:SpaceTime} shows the time and
+space for each of the solved problems.  The \textsc{UAV Navigation}
+problem has more continuous variables, however we can see that it is
+easier to solve than the \textsc{Space Telescope Control}, one
+possible reason is that the latter has more actions with more
+complex forms of linearly state dependent noise.

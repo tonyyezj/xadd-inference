@@ -1,0 +1,314 @@
+In order to compute the equations above, we propose a \emph{robust
+symbolic dynamic programming} (RSDP) approach building on the work
+of~\cite{sdp_aaai,sanner_uai11}.  This requires a value iteration
+algorithm described in Algorithm~\ref{alg:vi} (\texttt{VI}) and the
+regression subroutine described in Algorithm~\ref{alg:regress}.  All
+required operations have been previously defined
+in~\cite{sdp_aaai,sanner_uai11}.  In what follows we show how these
+operations can be used to compute RSDP from the previous section
+exactly and in closed-form.
+
+In general we define \emph{all} symbolic functions to be represented
+in \emph{case} form~\cite{fomdp} for which a binary ``cross-sum'' operation
+can be defined as follows:
+{\footnotesize 
+\begin{center}
+\begin{tabular}{r c c c l}
+&
+\hspace{-6mm} 
+  $\begin{cases}
+    \phi_1: & f_1 \\ 
+    \phi_2: & f_2 \\ 
+  \end{cases}$
+$\oplus$
+&
+\hspace{-4mm}
+  $\begin{cases}
+    \psi_1: & g_1 \\ 
+    \psi_2: & g_2 \\ 
+  \end{cases}$
+&
+\hspace{-2mm} 
+$ = $
+&
+\hspace{-2mm}
+  $\begin{cases}
+  \phi_1 \wedge \psi_1: & f_1 + g_1 \\ 
+  \phi_1 \wedge \psi_2: & f_1 + g_2 \\ 
+  \phi_2 \wedge \psi_1: & f_2 + g_1 \\ 
+  \phi_2 \wedge \psi_2: & f_2 + g_2 \\ 
+  \end{cases}$
+\end{tabular}
+\end{center}
+}
+\normalsize
+Here $\phi_i$ and $\psi_j$ are logical formulae defined over the state
+$(\vec{b},\vec{x})$ and can include arbitrary logical
+($\land,\lor,\neg$) combinations of boolean variables
+and \emph{linear} inequalities ($\geq,>,\leq,<$) over continuous
+variables -- we call this \emph{linear case form} (LCF).  The $f_i$
+and $g_j$ are restricted to be \emph{linear} functions.  Similarly
+operations such as $\ominus$ and $\otimes$ may be defined with operations
+applied to LCF functions yielded LCF results.
+
+In addition to $\ominus$ and $\otimes$ another key binary operation on case
+statements the preserves the LCF property is \emph{symbolic case maximization}:
+\vspace{-7mm}
+{\footnotesize
+\begin{center}
+\begin{tabular}{r c c c l}
+&
+\hspace{-7mm} $\casemax \Bigg(
+  \begin{cases}
+    \phi_1: \hspace{-2mm} & \hspace{-2mm} f_1 \\ 
+    \phi_2: \hspace{-2mm} & \hspace{-2mm} f_2 \\ 
+  \end{cases}$
+$,$
+&
+\hspace{-4mm}
+  $\begin{cases}
+    \psi_1: \hspace{-2mm} & \hspace{-2mm} g_1 \\ 
+    \psi_2: \hspace{-2mm} & \hspace{-2mm} g_2 \\ 
+  \end{cases} \Bigg)$
+&
+\hspace{-4mm} 
+$ = $
+&
+\hspace{-4mm}
+  $\begin{cases}
+  \phi_1 \wedge \psi_1 \wedge f_1 > g_1    : & \hspace{-2mm} f_1 \\ 
+  \phi_1 \wedge \psi_1 \wedge f_1 \leq g_1 : & \hspace{-2mm} g_1 \\ 
+  \phi_1 \wedge \psi_2 \wedge f_1 > g_2    : & \hspace{-2mm}f_1 \\ 
+  \phi_1 \wedge \psi_2 \wedge f_1 \leq g_2 : & \hspace{-2mm} g_2 \\ 
+ \vdots & \vdots
+ %\phi_2 \wedge \psi_1 \wedge f_2 > g_1    : & \hspace{-2mm} f_2 \\ 
+% \phi_2 \wedge \psi_1 \wedge f_2 \leq g_1 : & \hspace{-2mm} g_1 \\ 
+% \phi_2 \wedge \psi_2 \wedge f_2 > g_2    : & \hspace{-2mm} f_2 \\ 
+% \phi_2 \wedge \psi_2 \wedge f_2 \leq g_2 : & \hspace{-2mm} g_2 \\ 
+  \end{cases}$
+\end{tabular}
+\end{center}
+} \vspace{-1mm}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\incmargin{.5em}
+\linesnumbered
+\begin{algorithm}[t!]
+\vspace{-.5mm}
+\dontprintsemicolon
+\SetKwFunction{regress}{Regress}
+\Begin{
+   $V^0:=0, h:=0$\;
+   \While{$h < H$}{
+       $h:=h+1$\;
+       \ForEach {$a(\vec{y}) \in A$}{
+              $Q_a^{h}(\vec{y},\vec{n})\,:=\,$\regress{$V^{h-1},a,\vec{y}$}\;
+				$Q_a^{h}(\vec{y}) := \min_{\vec{n}} \, Q_a^{h}(\vec{y},\vec{n})$ $\,$\emph{//Stochastic $\min$}\;
+				$Q_a^{h} := \max_{\vec{y}} \, Q_a^{h}(\vec{y})$ $\,$ \emph{// Continuous $\max$}\;
+              $V^{h} := \casemax_a \, Q_a^{h}$ $\,$ \emph{// $\casemax$ all $Q_a$}\;
+              $\pi^{*,h} := \argmax_{(a,\vec{y})} \, Q_a^{h}(\vec{y})$\;
+       }
+       \If{$V^h = V^{h-1}$}
+           {break $\,$ \emph{// Terminate if early convergence}\;}
+   }
+     \Return{$(V^h,\pi^{*,h})$} \;
+}
+\caption{\footnotesize \texttt{VI}(CSA-MDP, $H$) $\longrightarrow$ $(V^h,\pi^{*,h})$ \label{alg:vi}}
+\vspace{-1mm}
+\end{algorithm}
+\decmargin{.5em}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\incmargin{.5em}
+\linesnumbered
+\begin{algorithm}[t!]
+\vspace{-.5mm}
+\dontprintsemicolon
+\SetKwFunction{remapWithPrimes}{Prime}
+%\SetKwFunction{sumout}{sumout}
+
+\Begin{
+    $Q=$ \remapWithPrimes{$V$} $\,$ \emph{// All $b_i \to b_i'$ and all $ x_i \to x_i'$} \;
+%%%%%%%%%%%%%%%%%%% ZAHRA TODO ( check casemax of noise is correct) 
+ 	\If {$v'$ in $R$}
+	 {$Q := R(\vec{b},\vec{b}',\vec{x},\vec{x}',a,\vec{y}) \oplus (\gamma \cdot Q)$} \;
+    \ForEach { $v'$ in $Q$}  
+    {
+    	\If {$v'$ = $x'_j$}
+    	{
+    	\emph{//Continuous marginal integration}\\
+         $Q := \int Q \otimes P(x_j'|\vec{b},\vec{b}',\vec{x},\vec{x}',a,\vec{y},\vec{n}) \, d_{x'_j}$\;
+    	}
+	    \If {$v'$=$b'_i$}
+    	{
+    	\emph{// Discrete marginal summation}\\
+         $Q := \left[ Q \otimes P(b_i'|\vec{b},\vec{b}',\vec{x},\vec{x}',a,\vec{y},\vec{n}) \right]|_{b_i' = 1}$\\
+         \hspace{8mm} $\oplus \left[ Q \otimes P(b_i'|\vec{b},\vec{b},\vec{x},\vec{x}',a,\vec{y},\vec{n}) \right]|_{b_i' = 0}$\;
+    	}
+    }
+    \If {$\neg$ ($v'$  in $R$)}
+    {$Q := R(\vec{b},\vec{b}',\vec{x},\vec{x}',a,\vec{y}) \oplus (\gamma \cdot Q)$ }\;
+     \ForEach { $n_l$ in $Q$}
+     {
+		\emph{// Sequence of $\max$-in for noise variables}\\          
+         $Q_a^{h}(\vec{y},\vec{n}) := \casemax_{n_l} \, ( Q, N(n_l, b_i,x_j))$ $\,$ \;
+	}
+	%%%%%%%%%%%%%%%%%%%%
+    \Return{$Q$} \;
+}
+\caption{\footnotesize \texttt{Regress}($V,a,\vec{y}$) $\longrightarrow$ $Q$ \label{alg:regress}}
+\vspace{-1mm}
+\end{algorithm}
+\decmargin{.5em}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+To demonstrate how \texttt{VI} symbolically implements RDP, we compute $V^1$ for the \textsc{Reservoir Control} example. For both actions, the function $Q^1_a$ is computed in line 6 using Algorithm~\ref{alg:regress} with the following operations for action $\mathit{no}$-$\mathit{drain}$:
+\begin{itemize}
+
+\item Priming V which %the current state variables ($d_i,l_j$) to build the next states ($d_i',l_j'$) in the value function. This
+indicates a \emph{symbolically substitution} of  $V'^0= V^0 \sigma = 0$ where $\sigma = \lbrace d_i \setminus d_i' , l_j \setminus l_j' \rbrace$.% for all values of $i$ and $j$. 
+
+\item Since the reward function contains the primed variable $l_1'$, line 4 is performed (and not line 15) where $Q = R(l_1,l'_1,d_i,d'_i,n,a) $. 
+
+\item For boolean variables, regression is performed using $f|_{b=v}$ (restriction operator) which assigns the value $v \in \{ 0,1 \}$ to any occurrence of $b$ in $f$-- not applicable to the example. For continuous variables line 9 follows the rules of integration w.r.t. a $\delta$ function~\cite{sanner_uai11} which simply yields a symbolic substitution: 
+{\footnotesize
+\begin{align}
+\int f(x'_j) \otimes \delta[x_j' - h(\vec{z})] dx'_j = f(x'_j) \{ x'_j / h(\vec{z}) \}\nonumber
+\end{align}}
+This results in the following $Q$-value for \textsc{Reservoir Control} : 
+{\footnotesize
+\begin{align*}
+%Q =   
+\begin{cases}
+(200 \leq l_1 \leq 4500) \wedge (200 \leq (l_1 + n) \leq 4500) &: \hspace{-1mm} l_1 + n\\
+\text{otherwise} &: -\infty\\
+\end{cases}
+\end{align*}
+}
+\item Maximizing the result with each of the noise variables in defined line 20 using a sequence of symbolic maximizations. Each noise variable assigns -$\infty$ for legal values inside the boundary range +$\infty$ for illegal values defined by the noise model $N(\vec{n},\vec{b},\vec{x})$. The result is defined below:
+%%%%%%%%%%%%%%%% Not in the log file and too big to fit
+%{\footnotesize
+%\begin{align}
+%\begin{cases}
+%1200 \leq n \leq 2000 :& -\infty \\
+%\neg(1200 \leq n \leq 2000) :& +\infty \\
+%d_1 \land (200 \leq l_1 \leq 4500) \land (1200 \leq n \leq 2000) \land (200 \leq (l_1+n) \leq 4500): & l_1 +n \\ 
+%d_1 \land (200 \leq l_1 \leq 4500) \land (1200 \leq n \leq 2000) \land \neg (200 \leq (l_1+n) \leq 4500): & - \infty \\ 
+%d_1 \land \neg (200 \leq l_1 \leq 4500) \land (1200 \leq n \leq 2000) : & -\infty \\  
+%d_1 \land (200 \leq l_1 \leq 4500) \land \neg(1200 \leq n \leq 2000) : & +\infty \\  
+%d_1 \land \neg (200 \leq l_1 \leq 4500) \land \neg(1200 \leq n \leq 2000) : & +\infty \\  
+%0 \leq n \leq 400 :& -\infty \\
+%\neg(0 \leq n \leq 400) :& +\infty \\
+%\neg d_1 \land (200 \leq l_1 \leq 4500) \land (0 \leq n \leq 400) \land (200 \leq (l_1+n) \leq 4500): & l_1 +n \\ 
+%\neg d_1 \land (200 \leq l_1 \leq 4500) \land (0 \leq n \leq 400) \land \neg (200 \leq (l_1+n) \leq 4500): & - \infty \\ 
+%\neg d_1 \land \neg(200 \leq l_1 \leq 4500) \land (0 \leq n \leq 400) : & -\infty \\  
+%\neg d_1 \land (200 \leq l_1 \leq 4500) \land \neg(0 \leq n \leq 400) : & +\infty \\  
+%\neg d_1 \land \neg(200 \leq l_1 \leq 4500) \land \neg(0 \leq n \leq 400) : & +\infty \\  
+%\end{cases} \nonumber
+%\end{align}
+%}
+%%%%%%%%%%%%%%%%%%%%%
+{\footnotesize
+\begin{align*}
+%Q =   
+\begin{cases}
+((l_1 \land (l_1+n)) \in \mathit{safe}) \land (n \in \mathit{legal}) &: l_1 + n\\
+(l_1  \in \mathit{safe}) \land  ((l_1+n) \notin \mathit{safe}) \land (n \in \mathit{legal}) &:  -\infty\\
+(n \notin \mathit{legal})&: +\infty\\
+\end{cases}
+\end{align*}
+}
+where $\mathit{legal}$ noise value corresponds to [0,400] or [1200,2000] and $\mathit{safe}$ water levels is [200,4500]. 
+%The result assigns the value of $l_1+n$ to both safe water levels and legal noise ranges. Unsafe current or next state water levels (with legal noise) lead to -$\infty$ and illegal noise ranges cause the value to be +$\infty$.
+
+The regressed stochastic $Q_a^{h}(\vec{y},\vec{n})$ from Algorithm~\ref{alg:regress} is now minimized over the noise variables $\vec{n}$ in line 7. Intuitively this continuous minimization will never choose +$\infty$ as there is always some value smaller which insures that the transitioned model never chooses illegal values. Each partition $i$ of this intermediate $Q$ is considered for a continuous minimization separately with the final result a $\casemin$ (definition follows from $\casemax$) on all the individual minimum results: $\casemin_i \min_n \phi_i(\vec{b},\vec{x},\vec{n}) f_i(\vec{b},\vec{x},\vec{n})$.  
+%%%%%%%%%%%%%%%%%% TODO: Can take this piece out completely
+We demonstrate the steps of this algorithm for the third partition of the regressed $Q$ defined as:
+{\footnotesize
+\begin{align*}
+d_1 \land (200\leq l_1\leq 4500) &\land (1200\leq n\leq 2000) \\
+& \land (200\leq (l_1+n)\leq 4500): l_1 +n 
+\end{align*}}
+For each partition the logical constraints are used to derive the (a) lower bound on $n$ ($LB =$ 1200, $200 -l_1$); (b) upper bound on $n$ ($UB =$ 2000, $4500- l_1$)  and (c) constraints independent of $n$ ($IND= d_1, 200 \leq l_1 \leq 4500$). In case of several bounds on $n$ the maximum of all lower bounds and the minimum of all upper bounds is desired.:
+{\footnotesize
+\begin{center}
+\begin{tabular}{r c c c l}
+&
+$
+LB =  
+\begin{cases}
+ l_1 < -1000 : & 200 - l_1 \\ 
+ l_1 > -1000 : & 1200 \\ 
+\end{cases} 
+$
+\\
+&
+$ UB =  
+\begin{cases}
+l_1 >2500 : & 4500 - l_1 \\ 
+l_1<2500 : & 2000 \\ 
+\end{cases} 
+$
+\end{tabular}
+\end{center}
+}
+The minima points of upper and lower bounds are evaluated for the leaf value which equals to substituting the bounds instead of the noise variable $n$ in the leaf function $n+ l_1$:
+{\footnotesize
+\begin{align}
+Q =  
+\begin{cases}
+ l_1\leq - 1798 :&  2000 + l_1 \\
+ l_1\leq - 1000 :&  200 \\
+ l_1\leq  3300 :&  1200.48 + l_1 \\
+  l_1\geq  3300 :&  4500 \\
+\end{cases} \nonumber
+\end{align}
+}
+Natural constraints on bounds $\LB \leq \UB$ and the $IND$ constraints are also considered for the minimization on a single partition to obtain: 
+{\footnotesize
+\begin{align}
+Q =  
+\begin{cases}
+d_1 \land ( 2000 \leq l_1 \leq 3300 ):&  1200.48 + l_1 \\
+\text{otherwise} :&  + \infty \\ 
+\end{cases} \nonumber
+\end{align}
+}
+%%%%%%%%%%%%%%%%%End of take this out
+The final result of a continuous minimization is a $\casemin$ over all partitions which results in the following Q-value:
+{\footnotesize
+\begin{align}
+Q^1_{\mathit{no}-\mathit{drain}} =  
+\begin{cases}
+d_1 \land (200 \leq l_1 \leq 2506) : & 1200.48 + l_1 \\
+\neg d_1 \land (200 \leq l_1 \leq 4098) : & l_1 \\
+\text{otherwise} : & -\infty \\ 
+\end{cases} \nonumber
+\end{align}
+}
+
+The resulting Q-value with minimal noise is maximized over the continuous action parameter (not available in our example) in line 8. A discrete $\casemax$ on the set of discrete actions for all $Q$-functions defines the final $V$:
+{\footnotesize
+\begin{align}
+V^1 =  
+\begin{cases}
+d_1 \land (2506 \leq l_1 \leq 4484): & 1 \\
+d_1 \land (200 \leq l_1 \leq 2506): & 1200.48 + l_1 \\
+\neg d_1 \land (4098 \leq l_1 \leq 4504) : & 1 \\
+\neg d_1 \land (200 \leq l_1 \leq 4098) : & l_1 \\
+\text{otherwise} : & -\infty \\ 
+\end{cases} \nonumber
+\end{align}
+}
+\end{itemize}
+To implement the case statements efficiently with continuous
+variables, extended Algebraic Decision diagrams (XADDs) are used from
+~\cite{sanner_uai11} extended from ADDs
+~\cite{bahar93add}. 
+
+In summary we remark that all operations including the
+continuous max and min operations preserve the LCF property,
+hence all operations for Robust SDP can be performed exactly in
+closed-form --- a first for receding horizon control with general forms
+of state-dependent continuous noise.

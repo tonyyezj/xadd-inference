@@ -1,0 +1,11 @@
+digraph G {
+	graph [fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", ranksep="2.00"];
+	node [label="\N", fontsize=16];
+	graph [bb="0,0,417,218"];
+	24 [label="((-1 * x3) + (1 * x4))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="74,18", width="2.0556", height="0.5"];
+	_temp_ [label="Parsed factor: f3", fillcolor=gold1, color=black, shape=box, style=filled, pos="357,199", width="1.6667", height="0.5"];
+	25 [label="((1 * x3) + (-1 * x4))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="240,18", width="2.0556", height="0.5"];
+	30 [label="((-1 * x3) + (1 * x4)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="157,199", width="3.3935", height="0.51069"];
+	30 -> 24 [color=black, style=solid, pos="e,81.899,36.035 148.89,180.51 134.25,148.94 103.33,82.258 86.154,45.211"];
+	30 -> 25 [color=black, style=dashed, pos="e,232.1,36.035 165.11,180.51 179.75,148.94 210.67,82.258 227.85,45.211"];
+}

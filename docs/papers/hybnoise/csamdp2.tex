@@ -1,0 +1,250 @@
+We first formally introduce the framework of Hybrid (discrete and
+continuous) Markov decision processes with non-deterministic
+continuous noise (ND-HMDPs) by extending the HMDP framework 
+of~\cite{sdp_aaai}. The optimal solution for this model is then defined
+via robust dynamic programming.
+
+\subsection{Factored Representation}
+
+An HMDP is modelled using state variables $(\vec{b},\vec{x}) = (
+b_1,\ldots,b_a,x_{1},\ldots,x_c )$ where each $b_i \in \{ 0,1 \}$
+($1 \leq i \leq a$) represents a discrete boolean variable and
+each $x_j \in \mathbb{R}$ ($1 \leq j \leq c$) is continuous.  To model
+continuous uncertainty in ND-HMDPs we additionally define intermediate
+noise variables $\vec{n} = n_1, \ldots , n_e$ where each
+$n_l \in \mathbb{R}$ ($1 \leq l \leq e$).  Both discrete and
+continuous actions are represented in the set $A
+= \{a_1(\vec{y}_1), \ldots, a_p(\vec{y}_p) \}$ where each action
+$a(\vec{y}) \in A$ references a (possibly empty) vector of continuous
+parameters $\vec{y} \in \mathbb{R}^{|\vec{y}|}$; we say an action is
+discrete if it has no continuous parameters ($|\vec{y}| = 0$), otherwise
+it is continuous.
+
+Given a current state $(\vec{b},\vec{x})$ and next state
+$(\vec{b}',\vec{x}')$ and an executed action $a(\vec{y})$ 
+at the current state, a real-valued reward function $R(\vec{b},\vec{x},\vec{b}',\vec{x}',a,\vec{y})$
+specifies the immediate reward obtained at the current state. The probability of the
+next state $(\vec{b}',\vec{x}')$ is defined by a joint state
+transition model
+$P(\vec{b}',\vec{x}'| \vec{b},\vec{x},a,\vec{y},\vec{n})$ which
+depends on the current state, action and noise.
+In a factored setting, we do not typically represent the transition
+distribution jointly but rather we factorize it into a
+dynamic Bayes net (DBN) as follows: %~\cite{dbn}
+{\footnotesize
+\begin{align}
+P&(\vec{b}',\vec{x}'|\vec{b},\vec{x}, a,\vec{y},\vec{n}) = \nonumber  \\
+& \prod_{i=1}^a P(b_i'|\vec{b},\vec{x},\vec{b}',\vec{x}',a,\vec{y},\vec{n}) 
+  \prod_{j=1}^c P(x_j'|\vec{b},\vec{x},\vec{b}',\vec{x}',a,\vec{y},\vec{n})
+\end{align}
+}
+\emph{Here we allow synchronic arcs under the condition that the DBN forms
+a proper directed acyclic graph (DAG)}.
+For binary variables $b_i$ ($1 \leq i \leq a$),
+$P(b_i'|\vec{b},\vec{x},\vec{b}',\vec{x}',\vec{x},a,\vec{y},\vec{n})$ are defined as
+general conditional probability functions (CPFs), which are not necessarily tabular
+since they may condition on inequalities over continuous variables.  For
+continuous variables $x_j$ ($1 \leq j \leq c$), the CPFs
+$P(x_j'|\vec{b},\vec{x},\vec{b}',\vec{x}',a,\vec{y},\vec{n})$ are represented
+with \emph{piecewise linear equations} (PLEs) that may have piecewise 
+conditions which are arbitrary logical combinations of
+$\vec{b}$, $\vec{b}'$ and linear inequalities over $\vec{x}$, $\vec{x}'$,
+and $\vec{n}$.  Examples of PLEs will follow shortly.
+
+In general, we assume that for each intermediate continuous noise variable 
+$n_l$ ($1 \leq l \leq e$)
+a non-deterministic noise interval constraint function $N(n_l| \vec{b},\vec{x},a,\vec{y})$ 
+has been defined 
+that represents a range covering $\alpha$ of the probability mass for $n_l$ and evaluates to 
+$-\infty$ for legal values of $n_l$ and $+\infty$ otherwise.  The reason for
+the $\pm \infty$ evaluation is simple: 
+in a robust solution to HMDPs with non-deterministic noise constraints, Nature will
+attempt to adversarially minimize the reward the agent can achieve and hence we let
+$N(n_l| \vec{b},\vec{x},a,\vec{y})$ take the value $+\infty$ for illegal values
+of $n_l$ to ensure Nature will never choose illegal assignments of $n_l$ when minimizing.
+
+%for an arbitrary constraint set $C(\vec{b},\vec{x},a,\vec{y})$ 
+%and 0-1 indicator function $\I$, 
+%this can be defined mathematically as:
+%\begin{equation}
+%N(n_l| \vec{b},\vec{x},a,\vec{y}) = 
+%\begin{cases}
+%\max_C \I[C\vec{b},\vec{x},a,\vec{y})] \int_{n_l} P(n_l| \vec{b},\vec{x},a,\vec{y}) dn_l > \alpha: & -\infty \\
+%\text{otherwise} : & +\infty 
+%\end{cases} \label{eq:noise_derivation}
+%\end{equation}
+As an intuitive example, if 
+$P(n_l| \vec{b},\vec{x},a,\vec{y}) = \mathcal{N}(n_l; \mu; \sigma^2)$
+is a simple Normal distribution with mean $\mu$ and variance $\sigma^2$ and we let $\alpha = 0.95$ 
+then we know that that the 95\% of the probability mass
+lies within $\mu \pm 2\sigma$, hence
+\begin{equation*}
+N(n_l| \vec{b},\vec{x},a,\vec{y}) = 
+\begin{cases}
+\mu - 2\sigma \leq n_l \leq \mu + 2 \sigma: & -\infty \text{ (legal)}\\
+\text{otherwise} : & +\infty \text{ (illegal)}
+\end{cases} \; .
+\end{equation*}
+%For more general state dependent distributions, ~\eqref{eq:noise_derivation} should
+%be evaluated directly; fortunately when the interval constraints $C$ are linear,
+%the linear-constrained integration techniques proposed by~\cite{sanner_aaai12} combined
+%with the symbolic maximization approach of~\cite{sdp_aaai} often allow this noise function to be 
+%computed analytically in closed-form when the indefinite integral over $n_l$ can
+%be computed for $N(n_l| \vec{b},\vec{x},a,\vec{y})$ and gradient optimization
+%is applied to the result to maximize constraint parameters.
+
+To make the ND-HMDP framework concrete, we now introduce a running example used
+throughout the paper:
+%%%%%%%%%%%%%%%%%%%%%%%%% ZAHRA TODO
+\begin{example*}[\textsc{Reservoir Control}]
+The problem of maintaining maximal reservoir levels subject to
+uncertain amounts of rainfall is an important problem in operations
+research (OR) literature~\cite{Mahootchi2009,Yeh1985}.  In one
+variant of this problem, a reservoir operator must
+make a daily decision to \emph{drain} some water from a reservoir 
+or not subject to weather forecasts over some time horizon.
+Specifically in a seven day period, we assume that the weather forecast calls for a 
+substantial amount of rain on the fourth day and chances of less rain on the
+others.  The objective of the reservoir operator is to avoid underflow or
+overflow conditions while maximizing reservoir capacity.
+
+Formally, we assume a state consisting of continuous reservoir level $l_1 \in \mathbb{R}$
+and 3 boolean variables $\vec{b}$ to encode a time period of eight days.  We have
+two actions $a \in A = \{ \mathit{drain}, \mathit{no}-\mathit{drain} \}$.
+The reward function $R$ is used to prevent overflow and underflow by assigning
+$-\infty$ penalty to water levels outside of lower reserve and upper
+capacity limits and a reward for the amount of water stored at the end of
+the time step.  For both $a \in A$ this is formally defined as:
+\vspace{-2mm} 
+{\footnotesize
+\begin{align*}
+R(l_1,l_1',\vec{b},\vec{b}',a) &= 
+\begin{cases}
+(200 \! \leq \! l_1 \! \leq \! 4500) \wedge (200 \! \leq \! l'_1 \! \leq \! 4500) & \!\! : l_1'\\
+\text{otherwise} & \!\! : -\infty\\
+\end{cases}
+\end{align*}
+}
+For the transition function, we assume that on each time step $\vec{b}' = \vec{b} + 1$ (not shown)
+and the reservoir level changes according to the amount of outflow (2000 units of water on a
+$\mathit{drain}$ and 0 units on a $\mathit{no}$-$\mathit{drain}$ action)
+plus a noisy (uncertain) amount of rain $n$:
+{\footnotesize
+\begin{align*}
+P(l'_1|l_1,n,d_i,d'_i, a& =\mathit{drain}) = \delta \left( l_1'  - (n + l_1 - 2000) \right) \\
+P(l'_1|l_1,n,d_i,d'_i, a&=\mathit{no}-\mathit{drain}) =\delta \left( l_1'  -  (n + l_1) \right)
+\end{align*}}
+The use of the $\delta[\cdot]$ function here ensures that the continuous CPF over $l'$ integrates to 1,
+which is crucial for defining a proper probability distribution.  While these PLEs are deterministic
+note that all continuous noise in this framework enters via the non-deterministic noise variables
+in ND-HMDPs.  The noisy level of rainfall $n$ is state-dependent and legal intervals are defined as follows:
+{\footnotesize
+\begin{align*}
+N(n|\vec{b},l_1) = \begin{cases}
+\vec{b} = 4 \wedge (1200 \leq n \leq 2000) &: -\infty \\
+\vec{b} = 4  \wedge (0 \leq n \leq 400)&: -\infty \\
+\text{otherwise} &: +\infty
+\end{cases}
+\end{align*}}
+In short, on day four ($\vec{b} = 4$) the amount of rain is expected to be between
+1200 and 2000 units, whereas on the other days it is expected to be between 0 and 400 units.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\end{example*}
+
+A policy $\pi(\vec{b},\vec{x})$ specifies the action $a(\vec{y}) =
+\pi(\vec{b},\vec{x})$ to take at state $(\vec{b},\vec{x})$.  
+In a robust solution to HMDPs with non-deterministic noise constraints, 
+an optimal sequence of finite horizon policies $\Pi^* = (\pi^{*,1},\ldots,\pi^{*,H})$ is desired such that given the initial state $(\vec{b}_0,\vec{x}_0)$ at $h=0$ and  a discount factor $\gamma, \; 0 \leq \gamma \leq 1$, the expected sum of discounted rewards over horizon $h \in H$ ($H \geq 0$) is maximized subject to Nature's
+adversarial attempt to choose value minimizing assignments of the noise variables.  The
+value function $V$ w.r.t. $\Pi^*$ in this case is defined via a recursive expectation
+{\footnotesize
+\begin{align*} 
+& V^{\Pi^{*,H}}(\vec{b},\vec{x}) = \min_{\vec{n}} \, \max\!\Big(N(n_1|\vec{b},\vec{x},\Pi^{*,H}),\ldots,\\
+& \max\!\Big(N(n_e|\vec{b},\vec{x},\Pi^{*,H}), E_{\Pi^{*,H}} \Big[ r^h \!\! + \! \gamma V^{\Pi^{*,H-1}} \! \! (\vec{b}',\!\vec{x}') \Big| \vec{b}_0,\!\vec{x}_0\Big] \Big) \!\! \cdots \!\! \Big)
+\end{align*}}                   
+where $r^h$ is the reward obtained at horizon $h$ following policy $\Pi^*$ and using
+Nature's minimizing choice of $\vec{n}$ at each $h$.
+
+The effect of ``max'ing'' in each of the previously defined
+$N(n_l| \vec{b},\vec{x},a,\vec{y})$ ($1 \leq l \leq e$) with the value
+function is one of the major insights and contributions of this paper.
+We noted before that Nature will never choose an illegal value of
+$n_l$ where $N(n_l| \vec{b},\vec{x},a,\vec{y}) = +\infty$, instead it
+will choose a legal value of $n_l$ for which
+$N(n_l| \vec{b},\vec{x},a,\vec{y}) = -\infty$ which when ``max'ed'' in
+with the value function effectively vanishes owing to the indentity
+$\max(v,-\infty) = v$ for all $v > -\infty$.
+
+% B = 1 - H(1-\alpha)
+% B - 1 = - H(1-\alpha)
+% (B - 1) / -H = 1-\alpha
+% (B - 1) / -H - 1 = -\alpha
+% 1 + (B - 1) / H = \alpha
+% 1 - (1 - B) / H = \alpha
+Finally, by leveraging the simple union bound, we can easily prove that
+that a policy will achieve $V^{\Pi^{*,H}}$ with at least $1 - H(1-\alpha)$
+probability since the probability of encountering a noise value
+outside the confidence interval is only $(1-\alpha)$ at any time step.
+Hence for a success probability of at least $\beta$, one should choose
+$\alpha = 1 - \frac{1 - \beta}{H}$, e.g., $\beta = 0.95$ success probability
+requires an $\alpha = 0.99$ for $H=5$.
+
+ 
+\subsection{Robust Dynamic Programming}
+
+We extend the value iteration dynamic programming
+algorithm~\cite{bellman} and specifically the form used for HMDPs
+in~\cite{sdp_aaai} to a robust dynamic programming (RDP) algorithm for
+ND-HMDPs that may be considered a continuous action generalization of
+zero-sum alternating turn Markov games~\cite{littman94}.  Initializing
+$V^0(\vec{b},\vec{x}) = 0$ the algorithm builds the $h$-stage-to-go
+value function $V^h(\vec{b},\vec{x})$.
+
+The quality $Q_a^{h}(\vec{b},\vec{x},\vec{y},\vec{n})$ of taking
+action $a(\vec{y})$ in state $(\vec{b},\vec{x})$ with noise parameters
+$\vec{n}$ and acting so as to obtain $V^{h-1}(\vec{b}',\vec{x}')$ thereafter 
+is defined as the following:
+%\vspace{-4mm}
+{\footnotesize
+\begin{align}
+Q_a^{h}&(\vec{b},\vec{x},\vec{y},\vec{n}) \! = \!
+\max\!\Big(\!\!N(n_1|\vec{b},\vec{x},\Pi^{*,H}),\!\ldots\!, \max\!\Big(\!\!N(n_e|\vec{b},\vec{x},\Pi^{*,H}), \nonumber \\
+& 
+\sum_{\vec{b}'} \int \prod_{i=1}^a P(b_i'|\vec{b},\vec{x},\vec{b}',\vec{x}',a,\vec{y},\vec{n}) \!
+\prod_{j=1}^c P(x_j'|\vec{b},\vec{x},\vec{b}',\vec{x}',a,\vec{y},\vec{n}) \! \nonumber \\
+& \qquad \qquad \; \Big[ R(\vec{b},\vec{x},\vec{b}',\vec{x}',a,\vec{y}) + \gamma V^{h-1}(\vec{b}',\vec{x}') d\vec{x}' \Big] \Big) \! \cdots \! \Big) \hspace{-2mm} \label{eq:qfun}
+\end{align}}
+Here the noise constraints $N(\vec{n},\vec{b},\vec{x})$ are ``max'ed''
+in with the value function to ensure Nature chooses a legal setting 
+of $n_l$, effectively reducing each $\max$ to an identity operation.  
+
+Next, given $Q_a^h(\vec{b},\vec{x},\vec{y},\vec{n})$ as above for each
+$a \in A$, we can proceed to define the $h$-stage-to-go value function
+assuming that the agent attempts to maximize value subject to Nature's
+adversarial choice of value-minimizing noise:
+\vspace{-2mm}
+{\footnotesize
+\begin{align}
+V^{h}(\vec{b},\vec{x}) & = \max_{a \in A} \max_{\vec{y} \in \mathbb{R}^{|\vec{y}|}} \min_{\vec{n} \mathbb{R}^{|\vec{e}|}} \left\{ Q^{h}_a(\vec{b},\vec{x},\vec{y},\vec{n}) \right\} \label{eq:vfun}
+\end{align}}
+The optimal policy at horizon $h$ can also be determined using the
+$Q$-function as below:
+{\footnotesize
+\begin{align}
+\pi^{*,h}(\vec{b},\vec{x}) = \argmax_{a \in A}  \argmax_{\vec{y} \in \mathbb{R}^{|\vec{y}|}}  \min_{\vec{n} \mathbb{R}^{|\vec{e}|}}  Q^h_a(\vec{b},\vec{x},\vec{y},\vec{n})
+\end{align}}
+For finite-horizon HMDPs the optimal value function and policy are
+obtained up to horizon H.  For infinite horizons where the optimal policy
+has finitely bounded value then value iteration terminates when two
+values are equal in subsequent horizons ($V^{h} = V^{h-1}$). In this
+case $V^\infty = V^h$ and $\pi^{*,\infty} = \pi^{*,h}$.
+ 
+Up to this point we have only provided the abstract mathematical
+framework for ND-HMDPs and RDP.  Fortuitously though, all of the
+required RDP operations in~\eqref{eq:qfun} and \eqref{eq:vfun} can be
+computed exactly and in closed-form as we discuss next.
+%We can leverage
+%the continuous $\max$ (and analoguously defined $\min$) operations and
+%symbolic DP approach of~\cite{sdp_aaai} in order to compute RDP 
+%via~\eqref{eq:qfun} and \eqref{eq:vfun} exactly in closed-form.  We
+%discuss this next.

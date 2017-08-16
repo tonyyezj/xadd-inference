@@ -1,0 +1,105 @@
+\begin{thebibliography}{10}
+
+\bibitem{bahar93add}
+R.~Iris Bahar, Erica Frohm, Charles Gaona, Gary Hachtel, Enrico Macii, Abelardo
+  Pardo, and Fabio Somenzi.
+\newblock {A}lgebraic {D}ecision {D}iagrams and their applications.
+\newblock In {\em {IEEE} /{ACM} International Conference on {CAD}}, 1993.
+
+\bibitem{bellman}
+Richard~E. Bellman.
+\newblock {\em Dynamic Programming}.
+\newblock Princeton University Press, Princeton, NJ, 1957.
+
+\bibitem{boutilier99dt}
+Craig Boutilier, Thomas Dean, and Steve Hanks.
+\newblock Decision-theoretic planning: Structural assumptions and computational
+  leverage.
+\newblock {\em {JAIR}}, 11:1--94, 1999.
+
+\bibitem{boyan01}
+Justin Boyan and Michael Littman.
+\newblock Exact solutions to time-dependent {MDPs}.
+\newblock In {\em Advances in Neural Information Processing Systems {NIPS-00}},
+  pages 1026--1032, 2001.
+
+\bibitem{bresina02}
+John~L. Bresina, Richard Dearden, Nicolas Meuleau, Sailesh Ramkrishnan,
+  David~E. Smith, and Richard Washington.
+\newblock Planning under continuous time and resource uncertainty:a challenge
+  for ai.
+\newblock In {\em Uncertainty in Artificial Intelligence (UAI-02)}, 2002.
+
+\bibitem{dbn}
+Thomas Dean and Keiji Kanazawa.
+\newblock A model for reasoning about persistence and causation.
+\newblock {\em Computational Intelligence}, 5(3):142--150, 1989.
+
+\bibitem{feng04}
+Zhengzhu Feng, Richard Dearden, Nicolas Meuleau, and Richard Washington.
+\newblock Dynamic programming for structured continuous markov decision
+  problems.
+\newblock In {\em Uncertainty in Artificial Intelligence ({UAI-04})}, pages
+  154--161, 2004.
+
+\bibitem{kveton06aaai}
+Branislav Kveton and Milos Hauskrecht.
+\newblock Learning basis functions in hybrid domains.
+\newblock In {\em In Proceedings of the 21st National Conference on Artificial
+  Intelligence (AAAI-06)}, pages 1161--1166, Boston, USA, 2006.
+
+\bibitem{kveton06}
+Branislav Kveton, Milos Hauskrecht, and Carlos Guestrin.
+\newblock Solving factored mdps with hybrid state and action variables.
+\newblock {\em Journal Artificial Intelligence Research (JAIR)}, 27:153--201,
+  2006.
+
+\bibitem{li05}
+Lihong Li and Michael~L. Littman.
+\newblock Lazy approximation for solving continuous finite-horizon mdps.
+\newblock In {\em National Conference on Artificial Intelligence {AAAI-05}},
+  pages 1175--1180, 2005.
+
+\bibitem{phase07}
+Janusz Marecki, Sven Koenig, and Milind Tambe.
+\newblock A fast analytical algorithm for solving markov decision processes
+  with real-valued resources.
+\newblock In {\em International Conference on Uncertainty in Artificial
+  Intelligence {IJCAI}}, pages 2536--2541, 2007.
+
+\bibitem{hao09}
+Nicolas Meuleau, Emmanuel Benazera, Ronen~I. Brafman, Eric~A. Hansen, and
+  Mausam.
+\newblock A heuristic search approach to planning with continuous resources in
+  stochastic domains.
+\newblock {\em Journal Artificial Intelligence Research (JAIR)}, 34:27--59,
+  2009.
+
+\bibitem{munos02}
+Andrew~Moore Remi~Munos.
+\newblock Variable resolution discretization in optimal control.
+\newblock {\em Machine Learning}, 49, 2--3:291--323, 2002.
+
+\bibitem{sanner_uai11}
+Scott Sanner, Karina~Valdivia Delgado, and Leliane~Nunes {de Barros}.
+\newblock Symbolic dynamic programming for discrete and continuous state mdps.
+\newblock In {\em Proceedings of the 27th Conference on Uncertainty in {AI}
+  ({UAI-2011})}, Barcelona, 2011.
+
+\bibitem{Scarf2002}
+Herbert~E Scarf.
+\newblock Inventory theory.
+\newblock {\em Operations Research}, 50(1):186--191, 2002.
+
+\bibitem{apricodd}
+Robert St-Aubin, Jesse Hoey, and Craig Boutilier.
+\newblock {APRICODD}: Approximate policy construction using decision diagrams.
+\newblock In {\em {NIPS-2000}}, pages 1089--1095, Denver, 2000.
+
+\bibitem{zamani12}
+Zahra Zamani, Scott Sanner, and Cheng Fang.
+\newblock Symbolic dynamic programming for continuous state and action mdps.
+\newblock In J{\"o}rg Hoffmann and Bart Selman, editors, {\em AAAI}. AAAI
+  Press, 2012.
+
+\end{thebibliography}

@@ -1,0 +1,441 @@
+
+CMDP Definition:
+===============
+BVars:       [] = S:[] + I:[] = XADD (all vars): []
+NS BVars:    []
+CVars:       [x1, x2, k] = S:[x1, x2, k] + A:[] + I:[]
+NS CVars:    [x2', k', x1']
+Noise vars:  []
+Min-values:  {x1=1.0E-6, x2=1.0E-6, k=1.0E-6, k'=1.0E-6, x2'=1.0E-6, x1'=1.0E-6}
+Max-values:  {x1=100.0, x2=100.0, k=100.0, k'=100.0, x2'=100.0, x1'=100.0}
+Order:       [xadd.XADD$NullDec@0, (1 + (-0.01 * k) + (-0.01 * x1)) > 0, (1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+Iterations:  2
+Linearity:  true
+Actions (3):
+
+==> noop ( ):
+*****
+CPF: k' [k]:
+( [(1 * k)] )
+*****
+CPF: x2' [x2]:
+( [(1 * x2)] )
+*****
+CPF: x1' [x1]:
+( [(1 * x1)] )
+*****
+Reward: []:
+( [0] )
+*****
+
+==> move1 ( ):
+*****
+CPF: k' [x1, k]:
+( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [((1 * k) + (1 * x1))] ) 
+    ( [(1 * k)] ) ) 
+*****
+CPF: x2' [x2]:
+( [(1 * x2)] )
+*****
+CPF: x1' [x1, k]:
+( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [0] ) 
+    ( [(1 * x1)] ) ) 
+*****
+Reward: [x1, k]:
+( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 * x1)] ) 
+    ( [0] ) ) 
+*****
+
+==> move2 ( ):
+*****
+CPF: k' [x2, k]:
+( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+    ( [((1 * k) + (1 * x2))] ) 
+    ( [(1 * k)] ) ) 
+*****
+CPF: x2' [x2, k]:
+( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+    ( [0] ) 
+    ( [(1 * x2)] ) ) 
+*****
+CPF: x1' [x1]:
+( [(1 * x1)] )
+*****
+Reward: [x2, k]:
+( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+    ( [(1 * x2)] ) 
+    ( [0] ) ) 
+*****
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ITERATION #1, 15292352:257425408 bytes, 0 ms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+>>> REGRESSING 'noop'
+
+- Primed value function:
+( [0] )
+- Elimination order for regression: []
+- Added in reward post-marginalization with no interm/next state vars.
+- Q^1(noop, [] )
+( [0] )
+- Q^1(noop ):
+ No noise parameters to max over, skipping this step.
+- Q^1(noop ):
+ No action parameters to max over, skipping this step.
+Running max in iter 1:( [0] )
+
+>>> REGRESSING 'move1'
+
+- Primed value function:
+( [0] )
+- Elimination order for regression: []
+- Added in reward post-marginalization with no interm/next state vars.
+- Q^1(move1, [] )
+( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 * x1)] ) 
+    ( [0] ) ) 
+- Q^1(move1 ):
+ No noise parameters to max over, skipping this step.
+- Q^1(move1 ):
+ No action parameters to max over, skipping this step.
+Running max in iter 1:( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 * x1)] ) 
+    ( [0] ) ) 
+
+>>> REGRESSING 'move2'
+
+- Primed value function:
+( [0] )
+- Elimination order for regression: []
+- Added in reward post-marginalization with no interm/next state vars.
+- Q^1(move2, [] )
+( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+    ( [(1 * x2)] ) 
+    ( [0] ) ) 
+- Q^1(move2 ):
+ No noise parameters to max over, skipping this step.
+- Q^1(move2 ):
+ No action parameters to max over, skipping this step.
+Running max in iter 1:( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2)) > 0]
+          ( [(1 * x2)] ) 
+          ( [(1 * x1)] ) )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+Iter complete:1( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2)) > 0]
+          ( [(1 * x2)] ) 
+          ( [(1 * x1)] ) )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+Value function size @ end of iteration 1: 7 nodes = 5 cases in 74 ms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ITERATION #2, 27372736:257425408 bytes, 0 ms
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+>>> REGRESSING 'noop'
+
+- Primed value function:
+( [(1 + (-0.01 * k') + (-0.01 * x2')) > 0]
+    ( [((-1 * x1') + (1 * x2')) > 0]
+       ( [(1 * x2')] ) 
+       ( [(1 + (-0.01 * k') + (-0.01 * x1')) > 0]
+          ( [(1 * x1')] ) 
+          ( [(1 * x2')] ) )  )  
+    ( [(1 + (-0.01 * k') + (-0.01 * x1')) > 0]
+       ( [(1 * x1')] ) 
+       ( [0] ) )  ) 
+- Elimination order for regression: [x1', x1, x2', x2, k', k]
+- Integrating out: x1'/5
+-->: ( [(1 + (-0.01 * k') + (-0.01 * x2')) > 0]
+    ( [(1 + (-0.01 * k') + (-0.01 * x1)) > 0]
+       ( [((-1 * x1) + (1 * x2')) > 0]
+          ( [(1 * x2')] ) 
+          ( [(1 * x1)] ) )  
+       ( [(1 * x2')] ) )  
+    ( [(1 + (-0.01 * k') + (-0.01 * x1)) > 0]
+       ( [(1 * x1)] ) 
+       ( [0] ) )  ) 
+- Ignoring current state or action variable x1 during elimination
+- Integrating out: x2'/4
+-->: ( [((-1 * x1) + (1 * x2)) > 0]
+    ( [(1 + (-0.01 * k') + (-0.01 * x1)) > 0]
+       ( [(1 + (-0.01 * k') + (-0.01 * x2)) > 0]
+          ( [(1 * x2)] ) 
+          ( [(1 * x1)] ) )  
+       ( [(1 + (-0.01 * k') + (-0.01 * x2)) > 0]
+          ( [(1 * x2)] ) 
+          ( [0] ) )  )  
+    ( [(1 + (-0.01 * k') + (-0.01 * x1)) > 0]
+       ( [(1 * x1)] ) 
+       ( [(1 + (-0.01 * k') + (-0.01 * x2)) > 0]
+          ( [(1 * x2)] ) 
+          ( [0] ) )  )  ) 
+- Ignoring current state or action variable x2 during elimination
+- Integrating out: k'/3
+-->: ( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2)) > 0]
+          ( [(1 * x2)] ) 
+          ( [(1 * x1)] ) )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+- Ignoring current state or action variable k during elimination
+- Added in reward post-marginalization with no interm/next state vars.
+- Q^2(noop, [] )
+( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2)) > 0]
+          ( [(1 * x2)] ) 
+          ( [(1 * x1)] ) )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+- Q^2(noop ):
+ No noise parameters to max over, skipping this step.
+- Q^2(noop ):
+ No action parameters to max over, skipping this step.
+Running max in iter 2:( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2)) > 0]
+          ( [(1 * x2)] ) 
+          ( [(1 * x1)] ) )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+
+>>> REGRESSING 'move1'
+
+- Primed value function:
+( [(1 + (-0.01 * k') + (-0.01 * x2')) > 0]
+    ( [((-1 * x1') + (1 * x2')) > 0]
+       ( [(1 * x2')] ) 
+       ( [(1 + (-0.01 * k') + (-0.01 * x1')) > 0]
+          ( [(1 * x1')] ) 
+          ( [(1 * x2')] ) )  )  
+    ( [(1 + (-0.01 * k') + (-0.01 * x1')) > 0]
+       ( [(1 * x1')] ) 
+       ( [0] ) )  ) 
+- Elimination order for regression: [k', x1', x1, x2', x2, k]
+- Integrating out: k'/3
+-->: ( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [((-1 * x1') + (1 * x2')) > 0]
+       ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x1')) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2')) > 0]
+             ( [(1 * x2')] ) 
+             ( [(1 * x1')] ) )  
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2')) > 0]
+             ( [(1 * x2')] ) 
+             ( [0] ) )  )  
+       ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x1')) > 0]
+          ( [(1 * x1')] ) 
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2')) > 0]
+             ( [(1 * x2')] ) 
+             ( [0] ) )  )  )  
+    ( [((-1 * x1') + (1 * x2')) > 0]
+       ( [(1 + (-0.01 * k) + (-0.01 * x1')) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x2')) > 0]
+             ( [(1 * x2')] ) 
+             ( [(1 * x1')] ) )  
+          ( [(1 + (-0.01 * k) + (-0.01 * x2')) > 0]
+             ( [(1 * x2')] ) 
+             ( [0] ) )  )  
+       ( [(1 + (-0.01 * k) + (-0.01 * x1')) > 0]
+          ( [(1 * x1')] ) 
+          ( [(1 + (-0.01 * k) + (-0.01 * x2')) > 0]
+             ( [(1 * x2')] ) 
+             ( [0] ) )  )  )  ) 
+- Integrating out: x1'/5
+-->: ( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2')) > 0]
+       ( [(1 * x2') > 0]
+          ( [(1 * x2')] ) 
+          ( [0] ) )  
+       ( [0] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2')) > 0]
+       ( [(1 * x2')] ) 
+       ( [0] ) )  ) 
+- Ignoring current state or action variable x1 during elimination
+- Integrating out: x2'/4
+-->: ( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 * x2) > 0]
+       ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+          ( [(1 * x2)] ) 
+          ( [0] ) )  
+       ( [0] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+- Ignoring current state or action variable x2 during elimination
+- Ignoring current state or action variable k during elimination
+- Added in reward post-marginalization with no interm/next state vars.
+- Q^2(move1, [] )
+( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 * x2) > 0]
+       ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+          ( [((1 * x1) + (1 * x2))] ) 
+          ( [(1 * x1)] ) )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+- Q^2(move1 ):
+ No noise parameters to max over, skipping this step.
+- Q^2(move1 ):
+ No action parameters to max over, skipping this step.
+Running max in iter 2:( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2)) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [((1 * x1) + (1 * x2))] ) 
+             ( [(1 * x2)] ) )  
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [((1 * x1) + (1 * x2))] ) 
+             ( [(1 * x1)] ) )  )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+
+>>> REGRESSING 'move2'
+
+- Primed value function:
+( [(1 + (-0.01 * k') + (-0.01 * x2')) > 0]
+    ( [((-1 * x1') + (1 * x2')) > 0]
+       ( [(1 * x2')] ) 
+       ( [(1 + (-0.01 * k') + (-0.01 * x1')) > 0]
+          ( [(1 * x1')] ) 
+          ( [(1 * x2')] ) )  )  
+    ( [(1 + (-0.01 * k') + (-0.01 * x1')) > 0]
+       ( [(1 * x1')] ) 
+       ( [0] ) )  ) 
+- Elimination order for regression: [x1', x1, k', x2', x2, k]
+- Integrating out: x1'/5
+- Ignoring current state or action variable x1 during elimination
+- Integrating out: k'/3
+-->: ( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2')) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [(1 + (-0.01 * k) + (-0.01 * x2) + (-0.01 * x2')) > 0]
+                ( [(1 * x2')] ) 
+                ( [(1 * x1)] ) )  
+             ( [(1 + (-0.01 * k) + (-0.01 * x2) + (-0.01 * x2')) > 0]
+                ( [(1 * x2')] ) 
+                ( [0] ) )  )  
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [(1 * x1)] ) 
+             ( [(1 + (-0.01 * k) + (-0.01 * x2) + (-0.01 * x2')) > 0]
+                ( [(1 * x2')] ) 
+                ( [0] ) )  )  )  
+       ( [((-1 * x1) + (1 * x2')) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x2')) > 0]
+             ( [(1 * x2')] ) 
+             ( [(1 * x1)] ) )  
+          ( [(1 * x1)] ) )  )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2')) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [(1 + (-0.01 * k) + (-0.01 * x2) + (-0.01 * x2')) > 0]
+                ( [(1 * x2')] ) 
+                ( [(1 * x1)] ) )  
+             ( [(1 + (-0.01 * k) + (-0.01 * x2) + (-0.01 * x2')) > 0]
+                ( [(1 * x2')] ) 
+                ( [0] ) )  )  
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [(1 * x1)] ) 
+             ( [(1 + (-0.01 * k) + (-0.01 * x2) + (-0.01 * x2')) > 0]
+                ( [(1 * x2')] ) 
+                ( [0] ) )  )  )  
+       ( [(1 + (-0.01 * k) + (-0.01 * x2')) > 0]
+          ( [(1 * x2')] ) 
+          ( [0] ) )  )  ) 
+- Integrating out: x2'/4
+-->: ( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x1) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [(1 * x1)] ) 
+             ( [0] ) )  
+          ( [0] ) )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x1) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [(1 * x1)] ) 
+             ( [0] ) )  
+          ( [0] ) )  
+       ( [0] ) )  ) 
+- Ignoring current state or action variable x2 during elimination
+- Ignoring current state or action variable k during elimination
+- Added in reward post-marginalization with no interm/next state vars.
+- Q^2(move2, [] )
+( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x1) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [((1 * x1) + (1 * x2))] ) 
+             ( [(1 * x2)] ) )  
+          ( [(1 * x2)] ) )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x1) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [((1 * x1) + (1 * x2))] ) 
+             ( [(1 * x2)] ) )  
+          ( [(1 * x2)] ) )  
+       ( [0] ) )  ) 
+- Q^2(move2 ):
+ No noise parameters to max over, skipping this step.
+- Q^2(move2 ):
+ No action parameters to max over, skipping this step.
+Running max in iter 2:( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2)) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [((1 * x1) + (1 * x2))] ) 
+             ( [(1 * x2)] ) )  
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [((1 * x1) + (1 * x2))] ) 
+             ( [(1 * x1)] ) )  )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+Iter complete:2( [(1 + (-0.01 * k) + (-0.01 * x1)) > 0]
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [((-1 * x1) + (1 * x2)) > 0]
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [((1 * x1) + (1 * x2))] ) 
+             ( [(1 * x2)] ) )  
+          ( [(1 + (-0.01 * k) + (-0.01 * x1) + (-0.01 * x2)) > 0]
+             ( [((1 * x1) + (1 * x2))] ) 
+             ( [(1 * x1)] ) )  )  
+       ( [(1 * x1)] ) )  
+    ( [(1 + (-0.01 * k) + (-0.01 * x2)) > 0]
+       ( [(1 * x2)] ) 
+       ( [0] ) )  ) 
+Value function size @ end of iteration 2: 10 nodes = 7 cases in 93 ms
+
+Value iteration complete!
+2 iterations took 161 ms
+Canonical / non-canonical: 663 / 243
+
+Iteration Results summary
+Iter 1: nodes = 7	branches = 5	time = 74 ms
+Iter 2: nodes = 10	branches = 7	time = 93 ms

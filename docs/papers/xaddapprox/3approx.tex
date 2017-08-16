@@ -1,0 +1,340 @@
+\label{sec:approx}
+
+In this section, we present the main novel contribution of our paper
+for approximating XADDs within a fixed error bound.  Since the point
+of XADD approximation is to shrink its size, we refer to our method of
+approximation as XADD Compression (\texttt{XADDComp}).
+
+Following previous work on ADD compression~\cite{apricodd}, we note
+that decision diagrams should be compressed from the bottom up ---
+merging leaves causes simplifications to ripple upwards through a
+decision diagram removing vacuous decisions and shrinking the decision
+diagram.  For example, after merging leaves in
+Figure~\ref{fig:stepfunfig}(a), we note that the only remaining
+decision in \ref{fig:stepfunfig}(b) is $x < 3$.  Hence, we focus on a
+leaf merging approach to \texttt{XADDComp}, which poses two questions:
+(1) what leaves do we merge?  And (2) how do we find the best
+approximation of merged leaves?  We answer these two questions in the
+following subsections.
+
+%A novel method for approximating piecewise linear functions with
+%bounded error. The goal of this algorithm is to reduce the number of
+%partitions of a piecewise linear function represented in case
+%form. This represents the ability to automatically identify and remove
+%locally unimportant constraints, whose removal results in a small
+%change in the represented function in exchange for a significant
+%improvement in the efficiency of computations with these
+%functions. XADDs already permit compactness by exploring variable and
+%context independencies, so our approximate approach goes further to
+%merge partitions as a form of removing dependencies that had little
+%influence in the represented function.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% I am glad that you have improved so many things, but it does seem
+%% bad that there were so many "mistakes".
+%%
+%% Not mistakes per se, but just too much technical detail that
+%% detracted from the main storyline that defines the paper.
+%% What you were writing was more for the style of a journal article 
+%% or thesis, so its appropriate when you go to write those.
+%%
+%% Also you should work on writing very succinct sentences.  Typically
+%% a lot of what you're writing can be expressed in much less space, or 
+%% does not really need to be explained, or does not need to be explained
+%% in the place you are explaining it.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%% TODO: need to show accumulated error in merges
+%% TODO: need to indicate with under-bracket, which nodes are being merged.
+%%
+\begin{figure}[t!]
+\centering
+  \subfigure[Original] {
+  	\begin{minipage}{.25\textwidth}
+	\includegraphics[width=\textwidth]{Figures/stepfun/succ1.pdf}
+	\end{minipage}
+	\begin{minipage}{.2\textwidth}
+	\includegraphics[width=\textwidth]{Figures/xadds/succ1xadd.pdf}
+	\end{minipage}
+	\label{original}
+  }
+\subfigure[Step1] {
+  	\begin{minipage}{.25\textwidth}
+	\includegraphics[width=\textwidth]{Figures/stepfun/succ2.pdf}
+	\end{minipage}
+	\begin{minipage}{.2\textwidth}
+	\includegraphics[width=\textwidth]{Figures/xadds/succ2xadd.pdf}
+	\end{minipage}
+	\label{step1} 
+}
+\subfigure[Step2]{
+  	\begin{minipage}{.25\textwidth}
+	\includegraphics[width=\textwidth]{Figures/stepfun/succ3.pdf}
+	\end{minipage}
+	\begin{minipage}{.2\textwidth}
+	\includegraphics[width=\textwidth]{Figures/xadds/succ3xadd.pdf}
+	\end{minipage}
+	 \label{step2}
+}
+\caption{ \footnotesize Successive pair merging XADD compression for a simple 1D example.
+At each step two nodes are chosen for merging, the best approximating
+hyperplane is determined according to Section~\ref{sec:leaf_approx},
+and if the accumulated error is within required bounds, the leaves are
+merged and internal XADD structure simplified to remove unneeded
+decisions.}  \label{fig:steplining}
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Successive Leaf Merging}
+
+%% See notes below on pseudocode... there will be too many questions
+%% about undefined notation and there are too many details to fix
+%% before the deadline.  I don't think you need anything more than
+%% the simple diagrammatic explanation of Successive Leaf Merging,
+%% as long as you denote the error accumulation.
+
+Since it would be combinatorially prohibitive to examine all possible
+leaf merges in an XADD, our \texttt{XADDComp} approximation approach in
+Algorithm~\ref{alg:approx} uses a systematic search strategy of successive
+pairwise merging of leaves. The idea is simple and is illustrated
+in Figure~\ref{fig:steplining}. The bounded error property is
+guaranteed by accumulating the amount of error "used" in every merged
+leaf and avoiding any merges that exceed a maximum error threshold $\epsilon$.
+However, we have not yet defined how to find the lowest error approximation
+of a pair of leaves in \texttt{PairLeafApp}, which we provide next.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+\incmargin{1.5em}
+\linesnumbered
+\begin{algorithm}[t!]
+\dontprintsemicolon
+%% NOTE: $error$ is read as e*r*r*o*r... you want $\mathit{error}$
+%% NOTE: Follow notation that is used in the paper, always L for a leaf/partition.
+%% NOTE: All algorithm notation has to be consistent, later algorithms
+%%       don't use this \KwIn, \KwOut and use := in place of \gets.
+%\KwIn{A piecewise linear function $V$, relative\_allow\_error}
+%\KwOut{Approximated version of $V$.}
+%% NOTE: Relative error adds numerous explanation complications and
+%%       I think it is hard to justify over the HMDP just passing in
+%%       an allowed error bound which is how things are done in the 
+%%       literature.  This is the cleanest way to do things and a 
+%%       more complex approach should not be taken unless it is empirically
+%%       better.
+%%$allow\_error \gets M * relative\_allow\_error$
+$\hat{\epsilon} \gets 0$ \emph{// The max amount of error used so far}\;
+$\hat{X} \gets X$ \emph{// The approximated XADD}\;
+$\Open := \{ L_i \} = \{ \l \phi_i, f_i \r \} \in \hat{X}$\emph{// cases in $\hat{X}$}\;
+\While{$\Open \neq \emptyset$} {
+	$L_1 := \Open.\mathit{pop}()$\;
+	\For{$ L_2 \in \Open$}  { 
+                \emph{// Merge and track accumulated error}\;
+		$(f^*,\tilde{\epsilon}) :=$\texttt{PairLeafApp}$(L_1, L_2)$\emph{// Sec~\ref{sec:leaf_approx}}\;
+%                \emph{// Track accumulated error in merge}\;
+	        $f^*.\Error := \tilde{\epsilon} + \max(f_1.\Error,f_2.\Error)$\;
+                \emph{// Keep merge if within error bounds}\;
+		\If {$f^*.\Error < \epsilon$}
+		{       
+                        $\hat{\epsilon} := \max(\hat{\epsilon}, f^*.\Error)$\;
+			$\Open.\mathit{remove}(L_2)$\;
+                        \emph{// Replace leaves in $\hat{X}$ and simplify}\;
+			$\hat{X}.f_1 := f^*, \; \hat{X}.f_2 := f^*$\; 
+                        $L_1 \! := \! \l \phi_1 \! \lor \phi_2, f^* \r$\emph{// Keep merging $L_1$}\;
+                        % \texttt{Simplify($\hat{X}$)}\; $ Not defined, so omit
+			\; 
+			%$\Open.\mathit{insert}(\l \phi_1 \lor \phi_2, f^* \r)$\;
+		}
+	}
+}
+\Return{$(\hat{X},\hat{\epsilon})$}\emph{// Comp. XADD and error used}\;
+\caption{\footnotesize 
+ \texttt{XADDComp}(XADD $X$, $\epsilon$) $\longrightarrow$ $(\hat{X},\hat{\epsilon})$}
+\label{alg:approx}
+\end{algorithm}
+\decmargin{1.5em}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Pairwise Leaf Approximation}
+
+\label{sec:leaf_approx}
+
+%% Following is verbose and a lot of it obvious, or already explained,
+%% or complicating matters in ways not required to get the key insights.
+%%
+%We now focus on the pairwise case linear function approximation. The
+%most important step in our solution to piecewise linear function
+%approximation is the iterative linear program based algorithm for
+%obtaining optimal, that is, max-error minimizing, case linear function
+%to approximate any pair of case linear functions. In order to explain
+%our algorithm more conveniently, we make the following consideration.
+%
+%Since the continuous domain of a case linear function is independent
+%of boolean variable decisions, they do not interfere with the
+%constrained maximization of the linear functions and therefore don't
+%affect the merging of case linear functions. Hence, for clarity, we
+%will consider piecewise linear functions whose partitions are defined
+%only with linear inequalities.
+%
+%We can now define the optimal merging of case linear functions as an
+%optimization problem. 
+
+%% Need to get to bilinear optimization problem by the end of the first
+%% paragraph.
+In pairwise leaf merging, we must address the following fundamental
+problem: given two XADD leaves represented by their case partitions
+$L_1 = \l f_1, \phi_1 \r$ and $L_2 = \l f_2, \phi_2 \r$, our goal is to
+determine the best linear case approximation of $L_1$ and $L_2$.  As
+it must represent $L_1$ and $L_2$, the solution must be defined in
+both regions and is therefore of the form $L^* =
+\l f^*,\phi_1 \lor \phi_2 \r$.  Since we restrict to linear XADDs, then 
+$f_1 = \vec{c_1}^T (\vec{x}^T,1)^T$, $f_2 = \vec{c_2}^T (\vec{x}^T,1)^T$ and 
+$f^* = \vec{c^*}^T (\vec{x}^T,1)^T$ (assuming
+$\vec{c_1},\vec{c_2},\vec{c^*} \in \mathbb{R}^{m+1}$ where $\vec{x} \in \mathbb{R}^{m}$).  
+Thus, our task reduces
+to one of finding the optimal weight vector $\vec{c^*}$ which minimizes approximation error 
+given by the following bilinear saddle point optimization problem:
+\begin{equation} 
+\min_{\vec{c}^*} \max_{i \in \{ 1, 2 \}} \max_{\vec{x} \in C(\phi_i)} \bigg| \underbrace{\vec{c_i}^T \mb \vec{x}\\1 \me}_{f_i} - \underbrace{\vec{c^*}^T \mb \vec{x}\\1 \me}_{f^*} \bigg| \label{eq:optimglo} 
+\end{equation}
+This is bilinear due to the inner product of $\vec{c^*}$ with $\vec{x}$.
+%This is a saddle point optimization problem due to the
+%$\min_{\vec{c}^*} \max_{\vec{x}}$ and bilinear due to the inner product
+%of $\vec{c^*}$ with $\vec{x}$.
+%
+%In short, this says that we need to find the weight vector $\vec{c^*}$
+%which \emph{minimizes the maximum absolute difference} between the hyperplanes defined
+%by $f^*$ and $f_1, f_2$, but only for the valid
+%$\vec{x}$ in the respective polytopes $C(\phi_1)$ and $C(\phi_2)$ where
+%each leaf $f_1$ and $f_2$ is valid.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{figure}[t!]
+\center
+\includegraphics[trim = 2cm 0cm 2cm 0cm, height=0.25\textwidth,width=0.2\textwidth]{Figures/optimDiag/optdiagram1.pdf} 
+\hspace{2mm}
+\includegraphics[trim = 2cm 0cm 2cm 0cm, height=0.25\textwidth,width=0.2\textwidth]{Figures/optimDiag/optdiagram2.pdf}
+\caption{\footnotesize Illustration of the pairwise leaf approximation problem: \emph{(left)} the original linear leaf functions $f_1$ and $f_2$ in their respective (single) polytope regions $\phi_1$ and $\phi_2$; \emph{(right)} a linear approximation $f$ overlaid on $f_1$ and $f_2$ in their regions showing errors at the polytope vertices.}
+\label{fig:optim} 
+\end{figure}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+To better understand the structure of this bilinear saddle point
+problem, we refer to Figure~\ref{fig:optim}, which shows on the
+left, two functions $f_1$ and $f_2$ and the respective single polytope
+regions $C(\phi_1)$ and $C(\phi_2)$ where $f_1$ and $f_2$ are
+respectively valid.  On the right, we show a proposed approximating
+hyperplane $f$ within the regions $C(\phi_1)$ and $C(\phi_2)$.
+Clearly we want to choose the $f^*=f$ that minimizes the absolute
+difference between $f$ and $f_1,f_2$ within their respective polytopes.
+On account of this perspective and recalling that $C(\phi_i)
+= \{ \PT(\theta_{ij}) \}_j$, we can rewrite~\eqref{eq:optimglo} as
+the following bi-level linear optimization problem:\footnote{
+To obtain a true bi-level \emph{linear} program, we need \emph{two} separate
+second stage constraints to encode that $\epsilon$ is larger than each
+side of the absolute value (the argument of the absolute value and its
+negation), but this is a straightforward absolute value expansion in a
+linear program that we will consider implicit to avoid notational clutter.}
+\begin{align}
+\min_{\vec{c}^*,\epsilon} \; & \epsilon \label{eq:bilevel} \\
+s.t. \;       & \epsilon \geq \left( \!\!
+  \begin{array}{ll}
+  \max\limits_{\vec{x}} \! & \left| \vec{c_i}^T \! \mb \vec{x}\\1 \me \! - \vec{c^*}^T \! \mb \vec{x}\\1 \me \right| \\ 
+  s.t. \;              \! & \vec{x} \in \PT(\theta_{ij})
+  \end{array} \!\!\! \right); \forall i \in \{ 1,\!2 \}, \forall \theta_{ij} \nonumber
+\end{align}
+While it may seem we have made little progress with this rewrite
+of~\eqref{eq:optimglo} --- this still appears to be a difficult
+optimization problem, we can make an important insight that allows
+us to remove the second stage of optimization altogether.  While
+implicitly it appears that the second stage would correspond to an
+infinite number of constraints --- one for each
+$\vec{x} \in \PT(\theta_{ij})$, we return to Figure~\ref{fig:optim}.
+Since each of $f$, $f_1$, and $f_2$ are all linear and
+$C(\phi_1),C(\phi_2)$ represent (unions of) linear convex polytopes,
+we know that the \emph{maximum difference} between $f$ and $f_1,f_2$ must
+occur at the \emph{vertices} of the respective polytope regions.
+Thus, denoting $\vec{x_{ij}^k}$ ($k \in \{ 1 \ldots N_{ij} \}$) as a vertex of
+the linear convex polytope defined by $\theta_{ij}$, we can obtain a
+\emph{linear program} version of~\eqref{eq:optimglo} with a \emph{finite} 
+number of constraints at the vertices $\vec{x_{ij}^k}$ of all polytopes:
+\begin{align}
+\min_{\vec{c}^*,\epsilon} \; & \epsilon \label{eq:linear_exp} \\
+s.t. \;       & \epsilon \geq \left| \vec{c_i}^T \! \mb \vec{x_{ij}^k}\\1 \me \! - \vec{c^*}^T \! \mb \vec{x_{ij}^k}\\1 \me \right|; 
+\begin{array}{l}
+\forall i \in \{ 1,\!2 \}, \forall \theta_{ij} \nonumber,\\ 
+\forall k \in \{ 1 \ldots N_{ij} \}
+\end{array}
+\end{align}
+Unfortunately, the drawback of this single linear programming approach
+is that for $M_{ij}$ linear constraints in $\PT(\theta_{ij})$, the
+number of vertices of the polytope may be \emph{exponential}, i.e., $N_{ij} =
+O(\exp M_{ij})$.  
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\incmargin{1.5em}
+\linesnumbered
+\begin{algorithm}[t!]
+\dontprintsemicolon
+$\vec{c^*} := \vec{0}$ \emph{// Arbitrarily initialize $\vec{c^*}$}\;
+$\epsilon^* := \infty$ \emph{// Initialize to invalid error}\;
+$C := \emptyset$ \emph{// Start with an empty constraint set}\;
+\emph{// Generate max error vertex constraints for $\vec{c^*}$}\;
+\For{$i \in \{ 1,2\}, \theta_{ij} \in C(\phi_i)$} {
+\nlset{} \vspace{-8mm}
+\begin{align*}
+&\vec{x_{ij}^k}_+ := \argmax_{\vec{x}} \left( \vec{c_i}^T \! \mb \vec{x}\\1 \me \! - \vec{c^*}^T \! \mb \vec{x}\\1 \me \right) \\ 
+&  \hspace{17mm} \textrm{s.t. } \vec{x} \in \PT(\theta_{ij})\\
+&\vec{x_{ij}^k}_- := \argmax_{\vec{x}} \left( \vec{c^*}^T \! \mb \vec{x}\\1 \me \! - \vec{c_i}^T \! \mb \vec{x}\\1 \me \right) \\ 
+&  \hspace{17mm} \textrm{s.t. } \vec{x} \in \PT(\theta_{ij})\\
+%\end{align*}
+%\begin{align*}
+&  C := C \cup \{ \epsilon \!>\! \vec{c_i}^T (\vec{x_{ij}^k}_+^T,1)^T \!-\! \vec{c^*}^T (\vec{x_{ij}^k}_+^T,1)^T \} \\
+&  C := C \cup \{ \epsilon \!>\! \vec{c^*}^T (\vec{x_{ij}^k}_-^T,1)^T \!-\! \vec{c_i}^T (\vec{x_{ij}^k}_-^T,1)^T \}
+\end{align*}\vspace{-6mm}
+}
+\emph{// Re-solve LP with augmented constraint set}\;
+$(\vec{c^*},\epsilon^*_{\mathit{new}}) := \argmin_{\vec{c}^*,\epsilon} \epsilon$ subject to $C$\;
+\If{$\epsilon^*_{\mathit{new}} \neq \epsilon^*$}{
+     $\epsilon^* := \epsilon^*_{\mathit{new}}$, go to line 4\;
+}
+\Return{$(\vec{c^*},\epsilon^*)$}\emph{// Best hyperplane and error}\;
+\caption{\footnotesize 
+ \texttt{PairLeafApp}($L_1,L_2$) $\longrightarrow$ ($\vec{c}^*,\epsilon$)}
+\vspace{-1mm}
+\label{alg:pairleafapp}
+\end{algorithm}
+\decmargin{1.5em}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+However, we make one final crucial insight: while we may have an
+exponential number of constraints in~\eqref{eq:linear_exp}, we have a
+very efficient way to evaluate for a \emph{fixed} solution
+$\vec{c}^*$, the single point $\vec{x_{ij}^k}$ in each
+$\PT(\theta_{ij})$ with max error --- this is exactly what the second
+stage linear program in~\eqref{eq:bilevel} provides.  Hence, this
+suggests an efficient \emph{constraint generation} approach to
+solving~\eqref{eq:linear_exp} that we outline in
+Algorithm~\ref{alg:pairleafapp}.  Beginning with an empty constraint
+set, we iteratively add in constraints for the polytope vertices
+$\vec{x_{ij}^k}$ that yield maximal error for the current best solution
+$\vec{c^*}$ (one constraint for each side of the absolute value).
+Then we re-solve for $(\vec{c^*},\epsilon^*)$ to see if the error
+has gotten worse; if not, we have reached optimality since $\vec{c^*}$
+satisfies all constraints (vertices $\vec{x_{ij}^k}$ not having
+constraints in $C$ had provably equal or smaller error than those in
+$C$) and adding in all constraints could not reduce $\epsilon^*$
+further.
+
+We conclude our discussion of \texttt{PairLeafApp} in
+Algorithm~\ref{alg:pairleafapp} with a key observation: it will always
+terminate in finite time with the optimal solution, since at least two
+constraints are generated on every iteration and there are only a
+finite number of possible polytope vertices $\vec{x_{ij}^k}$ for which
+to generate constraints.  We later demonstrate that
+\texttt{PairLeafApp} runs very efficiently in practice indicating 
+that it is generating only a small subset of the possible
+exponential set of constraints.
