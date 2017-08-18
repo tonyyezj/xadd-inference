@@ -37,11 +37,11 @@ public class TestXADD {
 
 	        //ixadd  = xadd_context.reduceProcessXADDLeaf(ixadd, max, false);
 	        //HashSet<Double> decisions = new HashSet<Double>();
-	        Double outcome = xadd_context.getExistNode(node).getDecisionBoundary();
-	        if (Double.isNaN(outcome)) // do not need to test boundary
-	        	System.out.println("hi");
-	        else
-	        	System.out.println("Boundary pt: " + outcome.toString());
+//	        Double outcome = xadd_context.getExistNode(node).getDecisionBoundary();
+//	        if (Double.isNaN(outcome)) // do not need to test boundary
+//	        	System.out.println("hi");
+//	        else
+//	        	System.out.println("Boundary pt: " + outcome.toString());
 			//String leaf = "( [x1 < x2 + 2])";
 			//Expr leaf_val = CompExpr.ParseCompExpr(leaf).makeCanonical();
 			//System.out.println(leaf_val.toString());

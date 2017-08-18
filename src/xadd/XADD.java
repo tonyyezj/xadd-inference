@@ -17,7 +17,8 @@ import java.io.FileReader;
 import java.io.PrintStream;
 import java.util.*;
 
-import bucketelim.CVarSubstitution;
+import bucketelim.DecisionBoundary;
+import bucketelim.VarSubstitution;
 import util.IntPair;
 import util.IntTriple;
 import camdp.HierarchicalParser;
@@ -553,11 +554,32 @@ public class XADD {
     //Symbolic substitution methods
     
     //the following substitute method is to adapt for the LHS/RHS evaluation for continuous vars
-    public int substituteCVar(int node_id, String varStr,  CVarSubstitution subst) {
+    public int substituteCVar(int node_id, String varStr,  VarSubstitution subst) {
         return reduceCVarSub(node_id, varStr, subst, new HashMap<Integer, Integer>());
     }
     
-    public int reduceCVarSub(int node_id, String varStr, CVarSubstitution substCVAR,
+    // ensure substitutions done in the same order ... due to the different results obtained
+    // by switching the orders 
+    public int substituteCVar(int node_id, HashMap<String, VarSubstitution> substMap, List<String> varOrder) {
+    	int currNode = node_id;
+    	for (int i = varOrder.size() - 1; i >= 0 ; i--) {
+    	//for (int i = 0; i < varOrder.size() ; i++) {	
+    		String varStr = varOrder.get(i);
+    		if (substMap.containsKey(varStr)) {
+    			VarSubstitution subst = substMap.get(varStr);
+    			currNode = reduceCVarSub(currNode, varStr, subst, new HashMap<Integer, Integer>());
+    		}
+    	}
+//    	for (String varStr : substMap.keySet()) {
+//    			VarSubstitution subst = substMap.get(varStr);
+//    			currNode = reduceCVarSub(currNode, varStr, subst, new HashMap<Integer, Integer>());
+//    		
+//    	}
+    	return currNode;
+        
+    }
+    
+    public int reduceCVarSub(int node_id, String varStr, VarSubstitution substCVAR,
         HashMap<Integer, Integer> subst_cache) {
     	
     	HashMap<String, ArithExpr> subst = new HashMap<String, ArithExpr>();
@@ -589,14 +611,20 @@ public class XADD {
 		XADDINode inode = (XADDINode) n;
 		
         
-        Double boundary = inode.getDecisionBoundary();
-        if (!Double.isNaN(boundary) && (Double.compare(boundary, substCVAR.getValue()) == 0)) {
-
-    		if (substCVAR.isHigh())
-    			return reduceCVarSub(inode._high, varStr, substCVAR, subst_cache);
-    		else
-    			return reduceCVarSub(inode._low, varStr, substCVAR, subst_cache);
-        	
+		DecisionBoundary boundary = inode.getDecisionBoundary(varStr);
+        if (!Double.isNaN(boundary.value) && (Double.compare(boundary.value, substCVAR.getValue()) == 0)) {
+        	if (boundary.isGreater) {
+	    		if (substCVAR.isHigh())
+	    			return reduceCVarSub(inode._high, varStr, substCVAR, subst_cache);
+	    		else
+	    			return reduceCVarSub(inode._low, varStr, substCVAR, subst_cache);
+        	}
+        	else {
+	    		if (!substCVAR.isHigh())
+	    			return reduceCVarSub(inode._high, varStr, substCVAR, subst_cache);
+	    		else
+	    			return reduceCVarSub(inode._low, varStr, substCVAR, subst_cache);        		
+        	}
         }
         else {
     		int low = reduceCVarSub(inode._low, varStr, substCVAR, subst_cache);
@@ -634,9 +662,6 @@ public class XADD {
 		
 
 }
-    
-    
-    
     
     public int substitute(int node_id, HashMap<String, ArithExpr> subst) {
         return reduceSub(node_id, subst, new HashMap<Integer, Integer>());
@@ -2726,7 +2751,7 @@ public class XADD {
         
         public abstract void collectBoundaries(HashSet<Double> nodes, String var);
 
-		public abstract Double getDecisionBoundary();
+		public abstract DecisionBoundary getDecisionBoundary(String varTarget);
 
     }
 
@@ -2786,8 +2811,8 @@ public class XADD {
             return;
         }
         
-        public Double getDecisionBoundary() {
-            return Double.NaN;
+        public DecisionBoundary getDecisionBoundary(String varTarget) {
+            return new DecisionBoundary(Double.NaN, true);
         }
 
         public void toGraph(Graph g, int id) {
@@ -2926,7 +2951,7 @@ public class XADD {
         }
         
      // only return boundary constant if there is one variable in the decision
-        public Double getDecisionBoundary() {
+        public DecisionBoundary getDecisionBoundary(String varTarget) {
             
         	Decision d = this.getDecision();
         	
@@ -2940,6 +2965,9 @@ public class XADD {
 
             		String var = iter.next();
             		
+            		if (!var.equals(varTarget))
+            			return new DecisionBoundary(Double.NaN, true);
+            		
             	    CompExpr comp = ((ExprDec)this.getDecision())._expr;
             	    
             	    
@@ -2950,7 +2978,7 @@ public class XADD {
                     double var_coef = p._coef;
  
                     if (var_coef == 0d) {
-                        return Double.NaN;
+                        return new DecisionBoundary(Double.NaN, true);
                     }
 
                     ArithExpr new_rhs = (ArithExpr) new OperExpr(ArithOperation.MINUS, ExprLib.ZERO, new OperExpr(ArithOperation.PROD, new DoubleExpr(
@@ -2961,11 +2989,11 @@ public class XADD {
 //            	    if (!decisions.contains(boundary)){
 //                           decisions.add(boundary);
 //            	    }
-                    return boundary;
+                    return new DecisionBoundary(boundary, (var_coef >= 0) ? true : false );
             	}
             	
             }
-            return Double.NaN;
+            return new DecisionBoundary(Double.NaN, true);
 //            getExistNode(_low).collectBoundaries(decisions,var);
 //            getExistNode(_high).collectBoundaries(decisions,var);
         }        

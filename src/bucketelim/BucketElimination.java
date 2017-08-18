@@ -36,42 +36,46 @@ public class BucketElimination {
     public boolean SHOW_PLOTS = false;
     public static boolean  DISPLAY_RAW_FACTORS = false;
     public double EPSILON = 1e-9;    
+    // note the below is useless ... the alternative doesn't work anymore
+    public boolean USE_ALT_CVARSUB = true;
+    
+    public static List<String> varOrder;
+    
     public double DISCRETE_SEGMENTS = 10;
     public boolean DISCRETIZE = false;
+    public static boolean INCLUDEBOUNDARIES = true;
     
-    public static int NUM_FACTORS = 25;
-  
+    public static int NUM_FACTORS = 10;
     public double CVAR_LB = 0;
     public double CVAR_UB = 10;
+    public static int XADDLIMIT = 1000000000; 
     
     public static boolean USEEXACT = false;
-    public boolean USE_ALT_CVARSUB = true;
-    public static int XADDLIMIT = 1000000;
+    public static boolean TIEBREAK = false;
 
 	public static void main(String[] args) throws Exception {
 		// constant case
-		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [10] ) ( [5] ) )");
+		BucketElimination be = buildBEProblem("( [x1 < x2] ( [10] ) ( [0] ) )");
 		// min(x_i, x_{i+1})
-		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x1] ) ( [x2] ) )");
+		//BucketElimination be = buildBEProblem("( [x1 < 50] ( [x1] ) ( [x2 - 50] ) )");
 	
 		// max(x_i, x_{i+1})
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x2] ) ( [x1] ) )");
 		// 2*max(x_i, x_{i+1}) + 1
-		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [-2*x2 + 1] ) ( [3*x1 + 1] ) )");
+		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [2*x2 + 1] ) ( [3*x1 + 1] ) )");
 		// max - min
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x2 - x1] ) ( [x1 - x2] ) )");
 		
 		//misc
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x3 > x4] ( [x3] ) ( [x5] ))( [x5] ))");
-		BucketElimination be = buildBEProblem(string);
+		//BucketElimination be = buildBEProblem(string);
 		//BucketElimination be = BuildMPEProblem("( [x1 < x2] ( [x2] ) ( [x3] ) )");
 		//BucketElimination be = BuildMPEProblem(Arrays.asList(new String[] {"f1", "f2", "f3", "f4"}));
 		if (USEEXACT)
 			be.solveBucketElim();
+			//be.solveMiniBucketElim(2);
 		else
 			be.solveMiniBucketElim(XADDLIMIT);
-		
-		
 	}
 	
 	public static String string = "([x1 < x2] ([x2 < x3] ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ) ([x2 < x3] ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ) )";
@@ -435,7 +439,7 @@ public class BucketElimination {
 	public double solveMiniBucketElim(int maxSize) {
     	
     	Timer timer = new Timer();
-    	List<String> var_order = getTWMinVarOrder();
+    	varOrder = getTWMinVarOrder();
     		
 	    // Do bucket/variable elimination
     	ArrayList<Integer> factors = (ArrayList<Integer>)_alAllFactors.clone();
@@ -450,7 +454,8 @@ public class BucketElimination {
 	    
 	    
 	    timer.ResetTimer();
-	    for (String var : var_order) {
+	    for (int i = 0; i < varOrder.size(); i++) {
+	    	String var = varOrder.get(i);
 	        System.out.println("Eliminating: " + var + ", " + factors.size() + " factors (max: " + largestFactorSize(factors) + " nodes)");
 	
 	        // Split factors into sets that contain and do not contain the variable
@@ -463,7 +468,12 @@ public class BucketElimination {
 	        
 	        splitOriginalFactorsMessages(factors_with_var, originalFactors, messages);        
 	        original_factorsByBucket.add(originalFactors);
+	        // add constant messages into the last bucket!
+	        if (i == varOrder.size() - 1) {
+	        	messages.addAll(factors_without_var);
+	        }
 	        messagesByBucket.add(messages);
+	        
 	          
 	        factors.clear();
 	        projected_factors=createMiniBuckets(maxSize,factors_with_var,var);
@@ -476,15 +486,16 @@ public class BucketElimination {
 	        projected_factorsByBucket.add(projected_factors);
 	        
 	        System.out.println(" - remaining factors: " + factors.size());
+
 	
-	        if (USEEXACT) {
-		        _context.clearSpecialNodes();
-		        for (Integer xadd : _alAllFactors)
-		            _context.addSpecialNode(xadd);
-		        for (Integer f : factors)
-		            _context.addSpecialNode(f);
-		        _context.flushCaches();
-	        }
+//	        if (USEEXACT) {
+//		        _context.clearSpecialNodes();
+//		        for (Integer xadd : _alAllFactors)
+//		            _context.addSpecialNode(xadd);
+//		        for (Integer f : factors)
+//		            _context.addSpecialNode(f);
+//		        _context.flushCaches();
+//	        }
 	        
 	        // Flush caches
 //	        _context.clearSpecialNodes();
@@ -512,8 +523,8 @@ public class BucketElimination {
 	    System.out.println("solveMiniBucketElim Done (" + timer.GetCurElapsedTime() + " ms): (approx?) value " + result_val + /*" [size: " + _context.getNodeCount(result) + ", vars: " + _context.collectVars(result) + "]"*/ "\n");
 	    //_context.getGraph(result).launchViewer("Final result " + result);
 	
-	    HashMap<String,Double> assignment=AStarWithMiniBucket(projected_factorsByBucket/**h^p_js**/,original_factorsByBucket/**F_{p_j}s**/,  messagesByBucket/**h_{p_j}s**/,var_order);
-        System.out.println("Assigment for variables: "+ assignment);
+	    HashMap<String,VarSubstitution> assignment=AStarWithMiniBucket(projected_factorsByBucket/**h^p_js**/,original_factorsByBucket/**F_{p_j}s**/,  messagesByBucket/**h_{p_j}s**/,varOrder);
+        //System.out.println("Assigment for variables: "+ assignment.toString());
         System.out.println("Time elapsed: " + timer.GetCurElapsedTime() + " ms");
 	    
 	    
@@ -522,26 +533,47 @@ public class BucketElimination {
 	
 
 
-	HashMap<String,Double> AStarWithMiniBucket(
+	HashMap<String,VarSubstitution> AStarWithMiniBucket(
 		ArrayList<ArrayList<Integer>> projected_factorsByBucket,
 		ArrayList<ArrayList<Integer>> originalFactorsByBucket,
 		ArrayList<ArrayList<Integer>> messagesByBucket,List<String> var_order) {
+		
+	    final int n=var_order.size();
          
 	    PriorityQueue<NodeSearch> L=new PriorityQueue<NodeSearch>(50,new Comparator<NodeSearch>()
 		{
         	public int compare(NodeSearch x, NodeSearch y)
 			{
-				if (x.getF_val() >= y.getF_val()) return -1;
-				else return 1;
+        		//double xComp = (x.partialAssignment.size() == n && y.partialAssignment.size() == n) ? ((DoubleExpr)((XADDTNode)_context.getNode(x.getG()))._expr)._dConstVal : x.getF_val();
+				//double yComp = (x.partialAssignment.size() == n && y.partialAssignment.size() == n) ? ((DoubleExpr)((XADDTNode)_context.getNode(y.getG()))._expr)._dConstVal : y.getF_val();
+           		double xComp = x.getF_val();
+    			double yComp = y.getF_val();        		
+        		if (xComp > yComp) 
+					return -1;
+				else if (xComp < yComp)
+					return 1;
+				// the two have equal heuristic value, prioritize the greater # of partial instantiations
+//				else
+//					return -1;
+//        						
+				if (!TIEBREAK)
+					return -1;
+				else {
+					if (x.getPartialAssignment().size() > y.getPartialAssignment().size())
+						return -1;
+					else if (x.getPartialAssignment().size() < y.getPartialAssignment().size())
+						return 1;
+					else
+						return 0;		
+				}
+
 			}
 		});
 
 	    //insert a dummy node in the set L with f=0
-	    HashMap<String,Double> partialAssignment=new HashMap<String,Double>();
+	    HashMap<String,VarSubstitution> partialAssignment=new HashMap<String,VarSubstitution>();
 	    NodeSearch node=new NodeSearch(partialAssignment, _context.getTermNode(new DoubleExpr(0d)),_context.getTermNode(new DoubleExpr(0d)),0);
 	    L.add(node);
-	    
-	    int n=var_order.size();
 	    
 	    int numNodesExplored = 0;
 	    
@@ -553,10 +585,11 @@ public class BucketElimination {
 	    	//if n=p then we have an optimal solution
 	    	if(node.getPartialAssignment().size()==n){
 	    		double g_val = ((DoubleExpr)((XADDTNode)_context.getNode(node.getG()))._expr)._dConstVal; 
-	    		System.out.println("g: " + g_val);
+	    		System.out.println("g value: " + g_val);
 	    		double h_val = ((DoubleExpr)((XADDTNode)_context.getNode(node.getH()))._expr)._dConstVal; 
-	    		System.out.println("H: " + h_val);
-	    		System.out.println("F: " + node.getF_val());
+	    		System.out.println("h value: " + h_val);	
+	    		System.out.println("F value: " + node.getF_val());		    		
+	    		System.out.println(node.toString());
 	    		System.out.println("# different (partial) nodes explored: " + (numNodesExplored - 1));
 	    		return node.getPartialAssignment();
 	    		
@@ -577,16 +610,14 @@ public class BucketElimination {
 		
 		
 		ArrayList<NodeSearch> succ=new ArrayList<NodeSearch>();
-		int numberBucket=var_order.size()-1-node.getPartialAssignment().size();
+		int numberBucket=var_order.size() - node.getPartialAssignment().size() - 1;
 		String var=var_order.get(numberBucket);
 		//compute newG, newH and newF
 		ArrayList<Integer> result=computeNewGHandF(node,projected_factorsByBucket, original_factorsByBucket, messagesByBucket, numberBucket);
 		Integer newG = result.get(0);
 		Integer newH = result.get(1);
 		Integer newF = result.get(2);
-		
-	
-		
+
 		//for each value (boundary) in the domain of X_{p+1} create a new node
 		ArrayList values=new ArrayList();
 		if (_context._alBooleanVars.contains(var)) {
@@ -600,12 +631,15 @@ public class BucketElimination {
 				Double increment = (CVAR_UB - CVAR_LB)/DISCRETE_SEGMENTS;
 				for (int i = 1; i < DISCRETE_SEGMENTS; i++) {
 					Double curr = CVAR_LB + increment*i;
-					values.add(curr);
+					values.add(new VarSubstitution(curr, true));
+					//values.add(new CVarSubstitution(curr, false));
 				}
-				values.add(CVAR_LB);
-				values.add(CVAR_UB);
+//				values.add(new CVarSubstitution(CVAR_LB, true));
+//				values.add(new CVarSubstitution(CVAR_LB, false));
+//				values.add(new CVarSubstitution(CVAR_UB, false));
+//				values.add(new CVarSubstitution(CVAR_UB, true));				
 			}
-			else {
+			if (INCLUDEBOUNDARIES) {
 				HashSet<Double> all_boundaries = _context.getExistNode(newF).collectBoundaries(var);
 				HashSet<Double> boundaries_F = new HashSet<Double>();
 				for (Double val : all_boundaries) {
@@ -625,15 +659,20 @@ public class BucketElimination {
 				}
 				else {
 					for (Double point : boundaries_F) {
-						values.add(new CVarSubstitution(point, true));
-						values.add(new CVarSubstitution(point, false));
+						values.add(new VarSubstitution(point, true));
+						values.add(new VarSubstitution(point, false));
 					}
 					
 					// also add the end points of the interval
-					values.add(new CVarSubstitution(CVAR_LB, true));
-					values.add(new CVarSubstitution(CVAR_UB, true));
-					values.add(new CVarSubstitution(CVAR_LB, false));
-					values.add(new CVarSubstitution(CVAR_UB, false));	
+					if (!boundaries_F.contains(CVAR_LB)) {
+						values.add(new VarSubstitution(CVAR_LB, true));
+						values.add(new VarSubstitution(CVAR_LB, false));
+						
+					}
+					if (!boundaries_F.contains(CVAR_UB)) {
+						values.add(new VarSubstitution(CVAR_UB, false));
+						values.add(new VarSubstitution(CVAR_UB, true));
+					}
 				}
 				
 				
@@ -645,7 +684,7 @@ public class BucketElimination {
 		}
 	
 		for(Object val:  values){
-			HashMap<String,Double> newPartialAssignment = (HashMap<String,Double>) node.getPartialAssignment().clone();
+			HashMap<String,VarSubstitution> newPartialAssignment = (HashMap<String,VarSubstitution>) node.getPartialAssignment().clone();
 	
 			HashMap<String, Boolean> subsBoolean=new HashMap<String, Boolean>();
 			HashMap<String, ArithExpr> subsCont = new HashMap<String, ArithExpr>();
@@ -654,14 +693,13 @@ public class BucketElimination {
 			int newFWithValue;
 			if (_context._alBooleanVars.contains(var)) {
 				// Boolean variable
-						    				
 				if((Boolean)val){
-					newPartialAssignment.put(var,1.0);
+					newPartialAssignment.put(var,new VarSubstitution(1.0, true));
 					subsBoolean.put(var,true);
 	
 				}
 				else{
-					newPartialAssignment.put(var,0.0);
+					newPartialAssignment.put(var,new VarSubstitution(1.0, true));
 					subsBoolean.put(var,false);
 	
 				}
@@ -674,20 +712,21 @@ public class BucketElimination {
 			}
 			else{		
 				
-				if (!USE_ALT_CVARSUB) {
-					newPartialAssignment.put(var,(Double) val);
-					subsCont.put(var, new DoubleExpr((Double)val) );
-					newGWithValue=_context.substitute(newG, subsCont);
-					newHWithValue=_context.substitute(newH, subsCont);
-					newFWithValue=_context.substitute(newF, subsCont);
-				}
-				else {
-					CVarSubstitution sub = (CVarSubstitution) val;
-					newPartialAssignment.put(var, sub.getValue());
+//				if (!USE_ALT_CVARSUB) {
+//					newPartialAssignment.put(var,(Double) val);
+//					subsCont.put(var, new DoubleExpr((Double)val) );
+//					newGWithValue=_context.substitute(newG, subsCont);
+//					newHWithValue=_context.substitute(newH, subsCont);
+//					newFWithValue=_context.substitute(newF, subsCont);
+//				}
+//				else {
+					VarSubstitution sub = (VarSubstitution) val;
+					newPartialAssignment.put(var, sub);
+					//newPartialAssignment.put(var, sub.getValue());
 					newGWithValue=_context.substituteCVar(newG, var, sub);
 					newHWithValue=_context.substituteCVar(newH, var, sub);
 					newFWithValue=_context.substituteCVar(newF, var, sub);					
-				}
+//				}
 				
 			}
 			if (SHOW_GRAPHS){
@@ -712,35 +751,37 @@ public class BucketElimination {
 		//we need to consider all the values in the newPartialAssignment
 		Set<String> varAssignmSet= node.getPartialAssignment().keySet();
 		HashMap<String, Boolean> subsBoolean=new HashMap<String, Boolean>();
-		HashMap<String, ArithExpr> subsCont = new HashMap<String, ArithExpr>();
+		//HashMap<String, ArithExpr> subsCont = new HashMap<String, ArithExpr>();
+		HashMap<String, VarSubstitution> subsCont = new HashMap<String, VarSubstitution>();
 		for(String varAssignment:varAssignmSet){
 	    	if (_context._alBooleanVars.contains(varAssignment)) {
 	    		// Boolean variable
-	    		subsBoolean.put(varAssignment,node.getPartialAssignment().get(varAssignment).compareTo(1.0)==0?true:false);
+	    		subsBoolean.put(varAssignment,( node.getPartialAssignment().get(varAssignment).getValue()).compareTo(1.0)==0?true:false);
 	    	}
 	    	else{
-	    		subsCont.put(varAssignment, new DoubleExpr(node.getPartialAssignment().get(varAssignment)) );
+	    		//subsCont.put(varAssignment, new DoubleExpr(node.getPartialAssignment().get(varAssignment)) );
+	    		subsCont.put(varAssignment, (node.getPartialAssignment().get(varAssignment)) );
 	    	}
 	    }
-	  //We need to substitute inside the computation of H. If not we have problems with -infinity
+	  
 		
-		
+		//We need to substitute inside the computation of H. If not we have problems with -infinity
 		ArrayList<Integer> result=new ArrayList<Integer>();
 		int newG=computeG(node.getG(), originalFactorsByBucket.get(numberBucket),subsBoolean, subsCont);
 		int newH;
-		if (node.getPartialAssignment().size() == 0) {
+		// do not subtract the projected factors from the lowest bucket
+		if (node.partialAssignment.size() == 0)
 			newH=computeH(node.getH(), messagesByBucket.get(numberBucket),new ArrayList<Integer>(),subsBoolean, subsCont);
-		}
-//		else if (numberBucket == 0)
-//			newH=_context.getTermNode(new DoubleExpr(0d));
 		else
 			newH=computeH(node.getH(), messagesByBucket.get(numberBucket),projected_factorsByBucket.get(numberBucket),subsBoolean, subsCont);
 		if (SHOW_GRAPHS){
 	    	_context.getGraph(newG).launchViewer("G: " + _context.collectVars(newG));
 	    	_context.getGraph(newH).launchViewer("H: " + _context.collectVars(newH));
 	   	}
-	
-	
+//		if (node.partialAssignment.size() == messagesByBucket.size() - 1) {
+//			int hi = 1;
+//			//_context.getGraph(newH).launchViewer("H: " + _context.collectVars(newH));
+//		}
 		
 	  	
 		int newF=_context.applyInt(newG, newH,XADD.SUM);
@@ -748,6 +789,7 @@ public class BucketElimination {
 		if (SHOW_GRAPHS){
 		  	_context.getGraph(newF).launchViewer("new f with substitution of x^{p-1}: " + _context.collectVars(newF));
 		}		
+
 		result.add(newG);
 		result.add(newH);
 		result.add(newF);
@@ -755,60 +797,62 @@ public class BucketElimination {
 	    return result;
 	}
 
-	private int computeG(int gMinus1,ArrayList<Integer> originalFactorsByBucket, HashMap<String, Boolean> subsBoolean, HashMap<String, ArithExpr> subsCont) {
+	private int computeG(int gMinus1,ArrayList<Integer> originalFactorsByBucket, HashMap<String, Boolean> subsBoolean, HashMap<String, VarSubstitution> subsCont) {
 		/*if (SHOW_GRAPHS){
 		    for (Integer i: FFactorsInBucket){        
 		  	_context.getGraph(i).launchViewer("new factors in bucket: " + _context.collectVars(i));
 		    }
 		}*/
-		
+		//_context.getGraph(gMinus1).launchViewer("g-1: " + _context.collectVars(gMinus1));
 	    int newG = combineFactors(originalFactorsByBucket);
 	    /*if (SHOW_GRAPHS){
 		 	  	_context.getGraph(newG).launchViewer("sum new factors in bucket: " );
 		 	  	_context.getGraph(gMinus1).launchViewer("sum new factors in bucket: " );
 		 	  	
 		 }*/
-	    
+	    //_context.getGraph(newG).launchViewer("factors: " + _context.collectVars(newG));
 	    newG = _context.applyInt(gMinus1,newG,  XADD.SUM);
 	    /*if (SHOW_GRAPHS){
 	 	  	_context.getGraph(newG).launchViewer("sum new factors in bucket: " );
 	 	  	
 	    }*/
-	    
+	    //_context.getGraph(newG).launchViewer("g-1 plus factor: " + _context.collectVars(newG));
 		newG=_context.substituteBoolVars(newG, subsBoolean);
 		/*if (SHOW_GRAPHS){
 	 	  	_context.getGraph(newG).launchViewer("sum new factors in bucket: " );
 	 	  	
 	    }*/
 		
-		newG= _context.substitute(newG, subsCont); //XADD with only one variable
+		newG= _context.substituteCVar(newG, subsCont, varOrder); //XADD with only one variable
 		/*if (SHOW_GRAPHS){
 	 	  	_context.getGraph(newG).launchViewer("sum new factors in bucket: " );
 	 	  	
 	    }*/
 		
 		newG=_context.reduceLP(newG);
-	    
+		//_context.getGraph(newG).launchViewer("(subed) g-1 plus factor: " + _context.collectVars(newG));
 		return newG;
 	}
 
-	private int computeH(int hMinus1, ArrayList<Integer> messagesInBucket, ArrayList<Integer> messagesCreatedInBucket, HashMap<String, Boolean> subsBoolean, HashMap<String, ArithExpr> subsCont) {
+	private int computeH(int hMinus1, ArrayList<Integer> messagesInBucket, ArrayList<Integer> messagesCreatedInBucket, HashMap<String, Boolean> subsBoolean, HashMap<String, VarSubstitution> subsCont) {
 
+		//_context.getGraph(hMinus1).launchViewer("h-1: " + _context.collectVars(hMinus1));
 		int newH1 = combineFactors(messagesInBucket);
+		//_context.getGraph(newH1).launchViewer("(presub) messages: " + _context.collectVars(newH1));
 	    newH1=_context.substituteBoolVars(newH1, subsBoolean); 
-		newH1= _context.substitute(newH1, subsCont); //XADD with only one variable
-	
+		newH1= _context.substituteCVar(newH1, subsCont, varOrder); //XADD with only one variable
+		//_context.getGraph(newH1).launchViewer("messages: " + _context.collectVars(newH1));
 	    
 	    int newH2 = combineFactors(messagesCreatedInBucket);
+	   // _context.getGraph(newH2).launchViewer("(presub) projected: " + _context.collectVars(newH2));
 	    newH2=_context.substituteBoolVars(newH2, subsBoolean); 
-		newH2= _context.substitute(newH2, subsCont); //XADD with only one variable
-	
-	    
+		newH2= _context.substituteCVar(newH2, subsCont, varOrder); //XADD with only one variable
+	//	_context.getGraph(newH2).launchViewer("projected: " + _context.collectVars(newH2));
+	   
 	    int newH = _context.applyInt(hMinus1, newH1,XADD.SUM);
 	    newH = _context.applyInt(newH, newH2,XADD.MINUS);
-	    
-	    
-		    
+	 //   _context.getGraph(newH).launchViewer("H: " + _context.collectVars(newH));
+
 	    newH=_context.reduceLP(newH);
 		return newH;
 	}

@@ -14,12 +14,9 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import logic.kb.fol.FOPC.Node;
-
 import camdp.HierarchicalParser;
-
 import util.DevNullPrintStream;
 import util.Timer;
-
 import xadd.*;
 import xadd.ExprLib.ArithExpr;
 import xadd.ExprLib.CompExpr;
@@ -210,7 +207,7 @@ public double solveMiniBucketElim(int maxVariables) {
 	        HFactorsByBucket.add(HFactors);
 	          
 	        factors.clear();
-	        projected_factors=createMiniBuckets(maxVariables,factors_with_var,var,factors);
+	        projected_factors=createMiniBuckets(maxVariables,factors_with_var,var);
 	        
     	     // adding new factors and all without the variable to the factors list
 
@@ -230,8 +227,8 @@ public double solveMiniBucketElim(int maxVariables) {
 	     //   _context.flushCaches();
 	    }
 	    //Include the h functions created without variables in the first bucket 
-	    ArrayList<Integer> lastHBucket= HFactorsByBucket.get(var_order.size()-1);
-	    lastHBucket.addAll(factors);
+	    //ArrayList<Integer> lastHBucket= HFactorsByBucket.get(var_order.size()-1);
+	    //lastHBucket.addAll(factors);
 	    
 	      
 	     
@@ -252,11 +249,11 @@ public double solveMiniBucketElim(int maxVariables) {
 	}
 
 
-HashMap<String,Double> AStarWithMiniBucket(
+	public HashMap<String,Double> AStarWithMiniBucket(
 		ArrayList<ArrayList<Integer>> projected_factorsByBucket,
 		ArrayList<ArrayList<Integer>> FFactorsByBucket,
 		ArrayList<ArrayList<Integer>> HFactorsByBucket,ArrayList<String> var_order) {
-         
+		
 	    PriorityQueue<NodeSearch> L=new PriorityQueue<NodeSearch>(50,new Comparator<NodeSearch>()
 		{
         	public int compare(NodeSearch x, NodeSearch y)
@@ -294,6 +291,7 @@ HashMap<String,Double> AStarWithMiniBucket(
 
 
 
+@SuppressWarnings("unchecked")
 private ArrayList<NodeSearch> generateSuccessors(NodeSearch node,
 		ArrayList<ArrayList<Integer>> projected_factorsByBucket,
 		ArrayList<ArrayList<Integer>> FFactorsByBucket,
@@ -496,7 +494,7 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
  * @param factors
  */
 
-	private ArrayList<Integer> createMiniBuckets(int maxVariables, ArrayList<Integer> factors_with_var, String var,ArrayList<Integer> factors) {
+	private ArrayList<Integer> createMiniBuckets(int maxVariables, ArrayList<Integer> factors_with_var, String var) {
 
 		  ArrayList<Integer> factors_inMiniBucket=new ArrayList<Integer>();
           ArrayList<Integer> factors_notinMiniBucket= new ArrayList<Integer>();
@@ -541,7 +539,6 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
 	
 	
 
-	@SuppressWarnings("unchecked")
 	private ArrayList<String> getTWMinVarOrder() {
 
 		Graph g = getVariableConnectivityGraph(_alAllFactors);
