@@ -1,5 +1,3 @@
-/.project
-/bucketelim/
 /camdp/
 /graph/
 /hgm/
@@ -10,12 +8,12 @@
 /prefs/
 /sve/
 /svexaddnew/
-/toget.zip
-/toget/
-/tskill/
 /generator/
 /plot/
 /stn/
+/tskill/
 /util/
 /xadd/
+/xaddbucketElimination/
 /xaddorig/
+/bucketelim/

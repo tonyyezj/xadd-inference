@@ -45,13 +45,14 @@ public class BucketElimination {
     public boolean DISCRETIZE = false;
     public static boolean INCLUDEBOUNDARIES = true;
     
-    public static int NUM_FACTORS = 10;
+    public static int NUM_FACTORS = 9;
     public double CVAR_LB = 0;
     public double CVAR_UB = 10;
     public static int XADDLIMIT = 1000000000; 
     
     public static boolean USEEXACT = false;
     public static boolean TIEBREAK = false;
+    public static boolean ONEPASS = false;
 
 	public static void main(String[] args) throws Exception {
 		// constant case
@@ -531,31 +532,23 @@ public class BucketElimination {
 	    return result_val;
 	}
 	
-
-
-	HashMap<String,VarSubstitution> AStarWithMiniBucket(
-		ArrayList<ArrayList<Integer>> projected_factorsByBucket,
-		ArrayList<ArrayList<Integer>> originalFactorsByBucket,
-		ArrayList<ArrayList<Integer>> messagesByBucket,List<String> var_order) {
-		
-	    final int n=var_order.size();
-         
-	    PriorityQueue<NodeSearch> L=new PriorityQueue<NodeSearch>(50,new Comparator<NodeSearch>()
-		{
-        	public int compare(NodeSearch x, NodeSearch y)
+	public Comparator<NodeSearch> BestSearchComparator() {
+		return new Comparator<NodeSearch>() {
+			@Override
+			public int compare(NodeSearch x, NodeSearch y)
 			{
-        		//double xComp = (x.partialAssignment.size() == n && y.partialAssignment.size() == n) ? ((DoubleExpr)((XADDTNode)_context.getNode(x.getG()))._expr)._dConstVal : x.getF_val();
+	    		//double xComp = (x.partialAssignment.size() == n && y.partialAssignment.size() == n) ? ((DoubleExpr)((XADDTNode)_context.getNode(x.getG()))._expr)._dConstVal : x.getF_val();
 				//double yComp = (x.partialAssignment.size() == n && y.partialAssignment.size() == n) ? ((DoubleExpr)((XADDTNode)_context.getNode(y.getG()))._expr)._dConstVal : y.getF_val();
-           		double xComp = x.getF_val();
-    			double yComp = y.getF_val();        		
-        		if (xComp > yComp) 
+	       		double xComp = x.getF_val();
+				double yComp = y.getF_val();        		
+	    		if (xComp > yComp) 
 					return -1;
 				else if (xComp < yComp)
 					return 1;
 				// the two have equal heuristic value, prioritize the greater # of partial instantiations
-//				else
-//					return -1;
-//        						
+	//				else
+	//					return -1;
+	//        						
 				if (!TIEBREAK)
 					return -1;
 				else {
@@ -566,10 +559,41 @@ public class BucketElimination {
 					else
 						return 0;		
 				}
-
+	
+			}		
+		};
+	}
+	
+	public Comparator<NodeSearch> OnePassComparator() {
+		return new Comparator<NodeSearch>() {
+			@Override
+        	public int compare(NodeSearch x, NodeSearch y)
+			{	    	    		
+				if (x.getPartialAssignment().size() > y.getPartialAssignment().size())
+					return -1;
+				else if (x.getPartialAssignment().size() < y.getPartialAssignment().size())
+					return 1;
+				else {
+	           		double xComp = x.getF_val();
+	    			double yComp = y.getF_val();        		
+	        		if (xComp >= yComp) 
+						return -1;
+					else
+						return 1;
+				}
 			}
-		});
+		};
+	}
 
+	HashMap<String,VarSubstitution> AStarWithMiniBucket(
+		ArrayList<ArrayList<Integer>> projected_factorsByBucket,
+		ArrayList<ArrayList<Integer>> originalFactorsByBucket,
+		ArrayList<ArrayList<Integer>> messagesByBucket,List<String> var_order) {
+		
+	    final int n=var_order.size();
+         
+		PriorityQueue<NodeSearch> L=new PriorityQueue<NodeSearch>(50, (ONEPASS) ? OnePassComparator() : BestSearchComparator());
+				
 	    //insert a dummy node in the set L with f=0
 	    HashMap<String,VarSubstitution> partialAssignment=new HashMap<String,VarSubstitution>();
 	    NodeSearch node=new NodeSearch(partialAssignment, _context.getTermNode(new DoubleExpr(0d)),_context.getTermNode(new DoubleExpr(0d)),0);
@@ -764,8 +788,6 @@ public class BucketElimination {
 	    	}
 	    }
 	  
-		
-		//We need to substitute inside the computation of H. If not we have problems with -infinity
 		ArrayList<Integer> result=new ArrayList<Integer>();
 		int newG=computeG(node.getG(), originalFactorsByBucket.get(numberBucket),subsBoolean, subsCont);
 		int newH;

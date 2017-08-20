@@ -602,7 +602,7 @@ public class XADD {
 		
 		// If its an internal node, check the reduce cache
 		if ((ret = subst_cache.get(node_id)) != null) {
-		// System.out.println("In cache, returning: " + qret);
+		 //System.out.println("In cache, returning: " + ret);
 		return ret;
 		}
 		
