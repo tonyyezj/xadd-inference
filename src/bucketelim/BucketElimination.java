@@ -36,7 +36,8 @@ public class BucketElimination {
     public boolean SHOW_PLOTS = false;
     public static boolean  DISPLAY_RAW_FACTORS = false;
     public double EPSILON = 1e-9;    
-    // note the below is useless ... the alternative doesn't work anymore
+    // note the 'false' option doesn't work anymore, removed code for substitution of continuous variables without considering +/- epsilon
+    // refer to code in stn package if this needs to coded.
     public boolean USE_ALT_CVARSUB = true;
     
     public static List<String> varOrder;
@@ -45,10 +46,10 @@ public class BucketElimination {
     public boolean DISCRETIZE = false;
     public static boolean INCLUDEBOUNDARIES = true;
     
-    public static int NUM_FACTORS = 9;
+    public static int NUM_FACTORS = 2;
     public double CVAR_LB = 0;
     public double CVAR_UB = 10;
-    public static int XADDLIMIT = 1000000000; 
+    public static int XADDLIMIT = 10000; 
     
     public static boolean USEEXACT = false;
     public static boolean TIEBREAK = false;
@@ -56,7 +57,7 @@ public class BucketElimination {
 
 	public static void main(String[] args) throws Exception {
 		// constant case
-		BucketElimination be = buildBEProblem("( [x1 < x2] ( [10] ) ( [0] ) )");
+		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [10] ) ( [0] ) )");
 		// min(x_i, x_{i+1})
 		//BucketElimination be = buildBEProblem("( [x1 < 50] ( [x1] ) ( [x2 - 50] ) )");
 	
@@ -69,7 +70,7 @@ public class BucketElimination {
 		
 		//misc
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x3 > x4] ( [x3] ) ( [x5] ))( [x5] ))");
-		//BucketElimination be = buildBEProblem(string);
+		BucketElimination be = buildBEProblem(ex1);
 		//BucketElimination be = BuildMPEProblem("( [x1 < x2] ( [x2] ) ( [x3] ) )");
 		//BucketElimination be = BuildMPEProblem(Arrays.asList(new String[] {"f1", "f2", "f3", "f4"}));
 		if (USEEXACT)
@@ -80,7 +81,7 @@ public class BucketElimination {
 	}
 	
 	public static String string = "([x1 < x2] ([x2 < x3] ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ) ([x2 < x3] ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ) )";
-	
+	public static String ex1 = "( [x1 < {{val}}] ( [x2 > {{val2}}] ( [x1 - x2] ) ( [x2 - x1] ) ) ( [x1 - x2] ) )";
    public static BucketElimination buildBEProblem(String xaddString) throws Exception {
     	
     	BucketElimination be = new BucketElimination();
@@ -92,7 +93,7 @@ public class BucketElimination {
 			String replaceStr3 = "x" + (j+1);
 			String replaceStr2 = "x" + j;
 			String replaceStr1 = "x" + i;
-			String xaddStr = xaddString.replace("x5 ", replaceStr5 + " ").replace("x5]", replaceStr5 + "]").replace("x4 ", replaceStr4 + " ").replace("x4]", replaceStr4 + "]").replace("x3 ", replaceStr3 + " ").replace("x3]", replaceStr3 + "]").replace("x2 ", replaceStr2 + " ").replace("x2]", replaceStr2 + "]").replace("x1 ", replaceStr1 + " ").replace("x1]", replaceStr1  + "]");
+			String xaddStr = xaddString.replace("{{val}}", Integer.toString(i)).replace("{{val2}}", Integer.toString(i+1)).replace("x5 ", replaceStr5 + " ").replace("x5]", replaceStr5 + "]").replace("x4 ", replaceStr4 + " ").replace("x4]", replaceStr4 + "]").replace("x3 ", replaceStr3 + " ").replace("x3]", replaceStr3 + "]").replace("x2 ", replaceStr2 + " ").replace("x2]", replaceStr2 + "]").replace("x1 ", replaceStr1 + " ").replace("x1]", replaceStr1  + "]");
 				//String xaddStr = xaddString.replaceAll("x2", "x"+Integer.toString(i+1).replaceAll("x1", "x"+Integer.toString(i)));
 	        int xadd = ParseXADDString(be._context, xaddStr);
 	        be._hmFactor2Name.put(xadd, factor);
@@ -832,7 +833,7 @@ public class BucketElimination {
 		 	  	_context.getGraph(gMinus1).launchViewer("sum new factors in bucket: " );
 		 	  	
 		 }*/
-	    //_context.getGraph(newG).launchViewer("factors: " + _context.collectVars(newG));
+	   // _context.getGraph(newG).launchViewer("factors: " + _context.collectVars(newG));
 	    newG = _context.applyInt(gMinus1,newG,  XADD.SUM);
 	    /*if (SHOW_GRAPHS){
 	 	  	_context.getGraph(newG).launchViewer("sum new factors in bucket: " );
