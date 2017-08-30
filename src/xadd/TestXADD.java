@@ -24,10 +24,21 @@ public class TestXADD {
     	//testMinOut(args);
 		 
 	        XADD xadd_context = new XADD();
-	        int node = xadd_context.buildCanonicalXADDFromString("( [2*x1 - 7 < 0] ( [10] ) ( [5] ) )");
+	        int f1 = xadd_context.buildCanonicalXADDFromString("( [y = 5 - x] ( [1] ) ( [0] ) )");
+	        int f2 = xadd_context.buildCanonicalXADDFromString("( [y = x] ( [1] ) ( [0] ) )");
+	        int yRestrict = xadd_context.buildCanonicalXADDFromString("( [y > 5] ( [0] ) ( [y < 0] ( [0] ) ( [1] ) ) )");
+	        int xRestrict1 = xadd_context.buildCanonicalXADDFromString("( [x > 5] ( [0] ) ( [x < 0] ( [0] ) ( [5 - x] ) ) )");
+	        int xRestrict2 = xadd_context.buildCanonicalXADDFromString("( [x > 5] ( [0] ) ( [x < 0] ( [0] ) ( [x] ) ) )");
+	        int multf1 = xadd_context.apply(yRestrict, xRestrict1, XADD.PROD);
+	        int multf2 = xadd_context.apply(yRestrict, xRestrict2, XADD.PROD);
+	        int xaddrRes = xadd_context.apply(multf1, multf2, XADD.MAX);
+	        
+	        
+	        Graph gRes = xadd_context.getGraph(xadd_context.reduceLP(xaddrRes));
+	        gRes.launchViewer();
 //	        int ixadd = TestBuild(xadd_context, "./src/xadd/ex/test7.xadd");
 //
-//	        Graph g1 = xadd_context.getGraph(ixadd);
+//	        Graph g1 = xadd_context.getGraph(node);
 //	        g1.launchViewer();
 //
 //	        int reduce = xadd_context.reduceLP(ixadd);

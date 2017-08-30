@@ -34,7 +34,7 @@ public class BucketElimination {
     public boolean DISPLAY = false;
     public boolean SHOW_GRAPHS =false;
     public boolean SHOW_PLOTS = false;
-    public static boolean  DISPLAY_RAW_FACTORS = false;
+    public static boolean  DISPLAY_RAW_FACTORS = true;
     public double EPSILON = 1e-9;    
     // note the 'false' option doesn't work anymore, removed code for substitution of continuous variables without considering +/- epsilon
     // refer to code in stn package if this needs to coded.
@@ -49,7 +49,7 @@ public class BucketElimination {
     public static int NUM_FACTORS = 2;
     public double CVAR_LB = 0;
     public double CVAR_UB = 10;
-    public static int XADDLIMIT = 10000; 
+    public static int XADDLIMIT = 1; 
     
     public static boolean USEEXACT = false;
     public static boolean TIEBREAK = false;
@@ -411,10 +411,10 @@ public class BucketElimination {
 		
 		        System.out.println(" - pre-projection factor size: " + _context.getNodeCount(combinedfactor_inMiniBucket) + ", vars: " +
 				_context.collectVars(combinedfactor_inMiniBucket).size() + " " + _context.collectVars(combinedfactor_inMiniBucket));
-				if (SHOW_GRAPHS)
+				//if (SHOW_GRAPHS)
 					_context.getGraph(combinedfactor_inMiniBucket).launchViewer("Pre-projected factor " + _context.collectVars(combinedfactor_inMiniBucket)/* + factor_with_var*/);
 				System.out.println(" - post-projection factor size: " + _context.getNodeCount(projected_factor) + ", vars: " + _context.collectVars(projected_factor).size() + " " + _context.collectVars(projected_factor));
-				if (SHOW_GRAPHS)
+				//if (SHOW_GRAPHS)
 					_context.getGraph(projected_factor).launchViewer("Post-projected factor " + _context.collectVars(projected_factor)/* + projected_factor*/);
 				
 				// Show plots of functions
@@ -812,6 +812,7 @@ public class BucketElimination {
 		if (SHOW_GRAPHS){
 		  	_context.getGraph(newF).launchViewer("new f with substitution of x^{p-1}: " + _context.collectVars(newF));
 		}		
+		_context.getGraph(newF).launchViewer("new f with substitution of x^{p-1}: " + _context.collectVars(newF));
 
 		result.add(newG);
 		result.add(newH);
@@ -867,16 +868,16 @@ public class BucketElimination {
 		//_context.getGraph(newH1).launchViewer("messages: " + _context.collectVars(newH1));
 	    
 	    int newH2 = combineFactors(messagesCreatedInBucket);
-	   // _context.getGraph(newH2).launchViewer("(presub) projected: " + _context.collectVars(newH2));
+	    //_context.getGraph(newH2).launchViewer("(presub) projected: " + _context.collectVars(newH2));
 	    newH2=_context.substituteBoolVars(newH2, subsBoolean); 
 		newH2= _context.substituteCVar(newH2, subsCont, varOrder); //XADD with only one variable
-	//	_context.getGraph(newH2).launchViewer("projected: " + _context.collectVars(newH2));
+		//_context.getGraph(newH2).launchViewer("projected: " + _context.collectVars(newH2));
 	   
 	    int newH = _context.applyInt(hMinus1, newH1,XADD.SUM);
 	    newH = _context.applyInt(newH, newH2,XADD.MINUS);
-	 //   _context.getGraph(newH).launchViewer("H: " + _context.collectVars(newH));
 
 	    newH=_context.reduceLP(newH);
+	    //_context.getGraph(newH).launchViewer("H: " + _context.collectVars(newH));
 		return newH;
 	}
 
