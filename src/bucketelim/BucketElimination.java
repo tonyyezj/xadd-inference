@@ -46,7 +46,7 @@ public class BucketElimination {
     public boolean DISCRETIZE = false;
     public static boolean INCLUDEBOUNDARIES = true;
     
-    public static int NUM_FACTORS = 2;
+    public static int NUM_FACTORS = 3;
     public double CVAR_LB = 0;
     public double CVAR_UB = 10;
     public static int XADDLIMIT = 1; 
@@ -64,15 +64,12 @@ public class BucketElimination {
 		// max(x_i, x_{i+1})
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x2] ) ( [x1] ) )");
 		// 2*max(x_i, x_{i+1}) + 1
-		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [2*x2 + 1] ) ( [3*x1 + 1] ) )");
+		BucketElimination be = buildBEProblem("( [x1 < x2] ( [2*x2 + 1] ) ( [3*x1 + 1] ) )");
 		// max - min
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x2 - x1] ) ( [x1 - x2] ) )");
-		
 		//misc
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x3 > x4] ( [x3] ) ( [x5] ))( [x5] ))");
-		BucketElimination be = buildBEProblem(ex1);
-		//BucketElimination be = BuildMPEProblem("( [x1 < x2] ( [x2] ) ( [x3] ) )");
-		//BucketElimination be = BuildMPEProblem(Arrays.asList(new String[] {"f1", "f2", "f3", "f4"}));
+		//BucketElimination be = buildBEProblem(ex1);
 		if (USEEXACT)
 			be.solveBucketElim();
 			//be.solveMiniBucketElim(2);
@@ -712,7 +709,7 @@ public class BucketElimination {
 			HashMap<String,VarSubstitution> newPartialAssignment = (HashMap<String,VarSubstitution>) node.getPartialAssignment().clone();
 	
 			HashMap<String, Boolean> subsBoolean=new HashMap<String, Boolean>();
-			HashMap<String, ArithExpr> subsCont = new HashMap<String, ArithExpr>();
+			HashMap<String, VarSubstitution> subsCont = new HashMap<String, VarSubstitution>();
 			int newGWithValue;
 			int newHWithValue;
 			int newFWithValue;
@@ -747,10 +744,10 @@ public class BucketElimination {
 //				else {
 					VarSubstitution sub = (VarSubstitution) val;
 					newPartialAssignment.put(var, sub);
-					//newPartialAssignment.put(var, sub.getValue());
-					newGWithValue=_context.substituteCVar(newG, var, sub);
-					newHWithValue=_context.substituteCVar(newH, var, sub);
-					newFWithValue=_context.substituteCVar(newF, var, sub);					
+					subsCont.put(var, sub);
+					newGWithValue=_context.substituteCVar(newG, subsCont, varOrder);
+					newHWithValue=_context.substituteCVar(newH, subsCont, varOrder);
+					newFWithValue=_context.substituteCVar(newF, subsCont, varOrder);					
 //				}
 				
 			}

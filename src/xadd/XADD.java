@@ -553,37 +553,38 @@ public class XADD {
 
     //Symbolic substitution methods
     
-    //the following substitute method is to adapt for the LHS/RHS evaluation for continuous vars
-    public int substituteCVar(int node_id, String varStr,  VarSubstitution subst) {
-        return reduceCVarSub(node_id, varStr, subst, new HashMap<Integer, Integer>());
-    }
-    
+    //the following substitute method is to adapt for the LHS/RHS evaluation for continuous vars   
     // ensure substitutions done in the same order ... due to the different results obtained
     // by switching the orders 
     public int substituteCVar(int node_id, HashMap<String, VarSubstitution> substMap, List<String> varOrder) {
-    	int currNode = node_id;
-    	for (int i = varOrder.size() - 1; i >= 0 ; i--) {
-    	//for (int i = 0; i < varOrder.size() ; i++) {	
-    		String varStr = varOrder.get(i);
-    		if (substMap.containsKey(varStr)) {
-    			VarSubstitution subst = substMap.get(varStr);
-    			currNode = reduceCVarSub(currNode, varStr, subst, new HashMap<Integer, Integer>());
-    		}
-    	}
-//    	for (String varStr : substMap.keySet()) {
-//    			VarSubstitution subst = substMap.get(varStr);
-//    			currNode = reduceCVarSub(currNode, varStr, subst, new HashMap<Integer, Integer>());
-//    		
+//    	int currNode = node_id;
+//    	for (int i = varOrder.size() - 1; i >= 0 ; i--) {
+//    		String varStr = varOrder.get(i);
+//    		if (substMap.containsKey(varStr)) {
+//    			VarSubstitu tion subst = substMap.get(varStr);
+//    			HashMap<String, VarSubstitution> map = new HashMap<String, VarSubstitution>();
+//    			map.put(varStr, subst);
+//    			HashMap<String, ArithExpr> subArithMap = new HashMap<String, ArithExpr>();
+//    			subArithMap.put(varStr, new DoubleExpr(substMap.get(varStr).getValue()));
+//    			currNode = reduceCVarSub(currNode, map, subArithMap, new HashMap<Integer, Integer>());
+//    		}
 //    	}
-    	return currNode;
+//    	return currNode;
+    	
+    	HashMap<String, ArithExpr> subArithMap = new HashMap<String, ArithExpr>();
+    	for (String var : substMap.keySet()) {
+    		subArithMap.put(var,  new DoubleExpr(substMap.get(var).getValue()));
+    	}
+    	
+    	return reduceCVarSub(node_id, substMap, subArithMap, new HashMap<Integer, Integer>());
         
     }
     
-    public int reduceCVarSub(int node_id, String varStr, VarSubstitution substCVAR,
+    public int reduceCVarSub(int node_id, HashMap<String,VarSubstitution> substMap, HashMap<String, ArithExpr> substArithMap,
         HashMap<Integer, Integer> subst_cache) {
     	
-    	HashMap<String, ArithExpr> subst = new HashMap<String, ArithExpr>();
-		subst.put(varStr, new DoubleExpr(substCVAR.getValue()));
+//    	HashMap<String, ArithExpr> subst = new HashMap<String, ArithExpr>();
+//		subst.put(varStr, new DoubleExpr(substCVAR.getValue()));
     	
 
 		Integer ret = null;
@@ -592,10 +593,10 @@ public class XADD {
 		// A terminal node should be reduced (and cannot be restricted)
 		// by default if hashing and equality testing are working in getTNode
 		if (n instanceof XADDTNode) {
-		ArithExpr expr = ((XADDTNode) n)._expr.substitute(subst);
+		ArithExpr expr = ((XADDTNode) n)._expr.substitute(substArithMap);
 		Object annotation = ((XADDTNode) n)._annotate;
 		if (annotation != null && annotation instanceof ArithExpr) {
-		   annotation = ((ArithExpr) annotation).substitute(subst);
+		   annotation = ((ArithExpr) annotation).substitute(substArithMap);
 		}
 		return getTermNode(expr, annotation);
 		}
@@ -609,26 +610,31 @@ public class XADD {
 		// Handle an internal node
 		
 		XADDINode inode = (XADDINode) n;
-		
         
-		DecisionBoundary boundary = inode.getDecisionBoundary(varStr);
-        if (!Double.isNaN(boundary.value) && (Double.compare(boundary.value, substCVAR.getValue()) == 0)) {
+		DecisionBoundary boundary = inode.getDecisionBoundary();
+		String boundaryVar = boundary.varString;
+		Double boundaryValue = boundary.value;
+        if (!Double.isNaN(boundaryValue) && substMap.containsKey(boundaryVar)
+        		&& Double.compare(substMap.get(boundaryVar).getValue(), boundaryValue) == 0) {
+        	VarSubstitution varSub = substMap.get(boundaryVar);
         	if (boundary.isGreater) {
-	    		if (substCVAR.isHigh())
-	    			return reduceCVarSub(inode._high, varStr, substCVAR, subst_cache);
+	    		if (varSub.isHigh())
+	    			return reduceCVarSub(inode._high, substMap, substArithMap, subst_cache);
 	    		else
-	    			return reduceCVarSub(inode._low, varStr, substCVAR, subst_cache);
+	    			return reduceCVarSub(inode._low, substMap, substArithMap, subst_cache);
         	}
         	else {
-	    		if (!substCVAR.isHigh())
-	    			return reduceCVarSub(inode._high, varStr, substCVAR, subst_cache);
+	    		if (!varSub.isHigh())
+	    			return reduceCVarSub(inode._high, substMap, substArithMap, subst_cache);
 	    		else
-	    			return reduceCVarSub(inode._low, varStr, substCVAR, subst_cache);        		
+	    			return reduceCVarSub(inode._low, substMap, substArithMap, subst_cache);        		
         	}
         }
         else {
-    		int low = reduceCVarSub(inode._low, varStr, substCVAR, subst_cache);
-    		int high = reduceCVarSub(inode._high, varStr, substCVAR, subst_cache);
+    		int low = reduceCVarSub(inode._low, substMap, substArithMap, subst_cache);
+    		int high = reduceCVarSub(inode._high, substMap, substArithMap, subst_cache);
+    		XADDNode lownode = getExistNode(low);
+    		XADDNode highnode = getExistNode(high);
     		
     		int var = inode._var;
     		Decision d = _alOrder.get(var);
@@ -636,12 +642,12 @@ public class XADD {
     		if (d instanceof ExprDec) {
     		// Only need to substitute if a var expression
     		CompExpr comp = ((ExprDec) d)._expr;
-    		comp = comp.substitute(subst);
+    		comp = comp.substitute(substArithMap);
     		d = new ExprDec(comp);
     		var = getVarIndex(d, true);
     		} else if (d instanceof BoolDec) {
     		// System.out.println(((BoolDec)d)._sVarName + ": " + subst);
-    		VarExpr sub = (VarExpr) subst.get(((BoolDec) d)._sVarName);
+    		VarExpr sub = (VarExpr) substArithMap.get(((BoolDec) d)._sVarName);
     		if (sub != null) {
     		   // There is a substitution for this BoolDec... get new var index
     		   var = getVarIndex(new BoolDec(sub._sVarName), false);
@@ -2751,7 +2757,7 @@ public class XADD {
         
         public abstract void collectBoundaries(HashSet<Double> nodes, String var);
 
-		public abstract DecisionBoundary getDecisionBoundary(String varTarget);
+		public abstract DecisionBoundary getDecisionBoundary();
 
     }
 
@@ -2811,8 +2817,8 @@ public class XADD {
             return;
         }
         
-        public DecisionBoundary getDecisionBoundary(String varTarget) {
-            return new DecisionBoundary(Double.NaN, true);
+        public DecisionBoundary getDecisionBoundary() {
+            return new DecisionBoundary(Double.NaN, true, "");
         }
 
         public void toGraph(Graph g, int id) {
@@ -2951,9 +2957,11 @@ public class XADD {
         }
         
      // only return boundary constant if there is one variable in the decision
-        public DecisionBoundary getDecisionBoundary(String varTarget) {
+        public DecisionBoundary getDecisionBoundary() {
             
         	Decision d = this.getDecision();
+        	
+        	String var = "";
         	
             if(d instanceof ExprDec){
             	HashSet<String> varSet = new HashSet<String>();
@@ -2963,10 +2971,10 @@ public class XADD {
 
             		Iterator<String> iter = varSet.iterator();
 
-            		String var = iter.next();
+            		var = iter.next();
             		
-            		if (!var.equals(varTarget))
-            			return new DecisionBoundary(Double.NaN, true);
+            		//if (!var.equals(varTarget))
+            			//return new DecisionBoundary(Double.NaN, true);
             		
             	    CompExpr comp = ((ExprDec)this.getDecision())._expr;
             	    
@@ -2978,7 +2986,7 @@ public class XADD {
                     double var_coef = p._coef;
  
                     if (var_coef == 0d) {
-                        return new DecisionBoundary(Double.NaN, true);
+                        return new DecisionBoundary(Double.NaN, true, var);
                     }
 
                     ArithExpr new_rhs = (ArithExpr) new OperExpr(ArithOperation.MINUS, ExprLib.ZERO, new OperExpr(ArithOperation.PROD, new DoubleExpr(
@@ -2989,11 +2997,11 @@ public class XADD {
 //            	    if (!decisions.contains(boundary)){
 //                           decisions.add(boundary);
 //            	    }
-                    return new DecisionBoundary(boundary, (var_coef >= 0) ? true : false );
+                    return new DecisionBoundary(boundary, (var_coef >= 0) ? true : false , var);
             	}
             	
             }
-            return new DecisionBoundary(Double.NaN, true);
+            return new DecisionBoundary(Double.NaN, true, var);
 //            getExistNode(_low).collectBoundaries(decisions,var);
 //            getExistNode(_high).collectBoundaries(decisions,var);
         }        
