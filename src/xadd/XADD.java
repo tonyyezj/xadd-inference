@@ -31,6 +31,7 @@ import xadd.ExprLib.VarExpr;
 import xadd.ExprLib.ArithOperation;
 import xadd.ExprLib.CompExpr;
 import xadd.LinearXADDMethod.NamedOptimResult;
+import xadd.XADD.ExprDec;
 
 /**
  * General class for implementation of ADD data structure
@@ -550,6 +551,110 @@ public class XADD {
         _hmReduceCanonCache.put(node_id, ret);
         return ret;
     }
+    
+    public HashSet<ExprDec> getDecisionsFromMaxOp(HashSet<ExprDec> decisions, String var, Double lowerBound, Double upperBound) {
+    	HashSet<ExprDec> decisionsFromMax = new HashSet<ExprDec>();
+ 
+        // Bound management
+        ArrayList<ArithExpr> lower_bound = new ArrayList<ArithExpr>();
+        ArrayList<ArithExpr> upper_bound = new ArrayList<ArithExpr>();
+        lower_bound.add(new DoubleExpr(lowerBound));
+        upper_bound.add(new DoubleExpr(upperBound));
+
+        // First compute the upper and lower bounds and var-independent constraints
+        // from the decisions
+        for (ExprDec d : decisions) {
+            CompExpr comp = null;
+            ExprDec ed = (ExprDec) d;
+            comp = ed._expr;
+
+            // Check that comparison expression is normalized
+            if (!comp._rhs.equals(ExprLib.ZERO)) {
+                System.out.println("processXADDLeaf: Expected RHS = 0 for '" + comp + "'");
+                System.exit(1);
+            }
+
+            // Takes ArithExpr expr1 linear in var, returns (coef,expr2) where expr1 = coef*x + expr2
+            CoefExprPair p = comp._lhs.removeVarFromExpr(var);
+            ArithExpr lhs_isolated = p._expr;
+            double var_coef = p._coef;
+
+            if (var_coef == 0d) {
+            	decisionsFromMax.add(d);
+                continue;
+            }
+
+            // We have var_coef*x + lhs_isolated {<,<=,>,>=} 0
+            // ... need to get x {<,<=,>,>=} 1/var_coef * lhs_isolated
+            //     (and inequality gets flipped if var_coef is negative)
+            boolean flip_comparison = (var_coef < 0d) && (comp._type != CompOperation.EQ) && (comp._type != CompOperation.NEQ);
+            ArithExpr new_rhs = (ArithExpr) new OperExpr(ArithOperation.MINUS, ExprLib.ZERO, new OperExpr(ArithOperation.PROD, new DoubleExpr(
+                    1d / var_coef), lhs_isolated)).makeCanonical();
+
+            // Divide through by coef (pos or neg)
+            // - if coef neg, flip expression
+            // - if decision neg, flip expression
+            // - if both, don't flip
+            CompOperation comp_oper = comp._type;
+//            if ((/* negated */!is_true && !flip_comparison) || (/* not negated */is_true && flip_comparison)) {
+//                comp_oper = CompExpr.flipCompOper(comp_oper);
+//            }
+
+            // Now we have (x {<,<=,>,>=} expr)... mark each as lower/upper bound:
+            // - lower bounds: x > f(y), x >= f(y)
+            // - upper bounds: x < f(z), x <= f(z)
+            if (comp_oper == CompOperation.GT || comp_oper == CompOperation.GT_EQ)
+                lower_bound.add(new_rhs);
+            else if (comp_oper == CompOperation.LT || comp_oper == CompOperation.LT_EQ)
+                upper_bound.add(new_rhs);
+            else {
+                System.out.println("Cannot currently handle: "
+                        + new CompExpr(comp_oper, new VarExpr(var), new_rhs));
+                System.out.println("Note: = triggers substitution, not sure how to handle ~=");
+                new Exception().printStackTrace();
+                System.exit(1);
+            }
+        }
+
+        // Now explicitly compute lower and upper bounds as XADDs
+        //
+        // If these are polynomials, must go to +/- infinity at limits so cannot
+        // be used to approximate cdfs. Hence we must assume that there will always
+        // be limits on the polynomial functions implicit in the bounds.
+        if (VERBOSE_MIN_MAX) System.out.println("Lower bounds: " + lower_bound);
+        int xadd_lower_bound = -1;
+        for (ArithExpr e : lower_bound) // Lower bound is max of all lower bounds
+            xadd_lower_bound = (xadd_lower_bound == -1) ? getTermNode(e)
+                    : apply(xadd_lower_bound, getTermNode(e), MAX);
+
+        if (xadd_lower_bound != -1) {
+        	decisionsFromMax.addAll(getExistNode(xadd_lower_bound).collectDecisions());
+        }
+            
+            
+        if (VERBOSE_MIN_MAX) System.out.println("Upper bounds: " + upper_bound);
+        int xadd_upper_bound = -1;
+        for (ArithExpr e : upper_bound) // Upper bound is min of all upper bounds
+            xadd_upper_bound = (xadd_upper_bound == -1) ? getTermNode(e)
+                    : apply(xadd_upper_bound, getTermNode(e), MIN);
+        if (xadd_upper_bound != -1) {
+        	decisionsFromMax.addAll(getExistNode(xadd_upper_bound).collectDecisions());
+        }
+
+        // Build all constraints for the maximization
+        for (ArithExpr e1 : upper_bound) {
+            for (ArithExpr e2 : lower_bound) {
+                CompExpr ce = new CompExpr(CompOperation.GT, e1, e2);
+                ExprDec ed = new ExprDec(ce);
+                HashSet<String> vars = new HashSet<String>();
+                ce.collectVars(vars);
+                if (!vars.isEmpty())
+                	decisionsFromMax.add(ed);
+            }
+        }
+    	
+    	return decisionsFromMax;
+    }
 
     //Symbolic substitution methods
     
@@ -615,16 +720,17 @@ public class XADD {
 		String boundaryVar = boundary.varString;
 		Double boundaryValue = boundary.value;
         if (!Double.isNaN(boundaryValue) && substMap.containsKey(boundaryVar)
-        		&& Double.compare(substMap.get(boundaryVar).getValue(), boundaryValue) == 0) {
+        		&& !substMap.get(boundaryVar).isStrictValue()
+        		&& (Double.compare(substMap.get(boundaryVar).getValue(), boundaryValue) == 0)) {
         	VarSubstitution varSub = substMap.get(boundaryVar);
         	if (boundary.isGreater) {
-	    		if (varSub.isHigh())
+	    		if (varSub.isEpsilonPositive())
 	    			return reduceCVarSub(inode._high, substMap, substArithMap, subst_cache);
 	    		else
 	    			return reduceCVarSub(inode._low, substMap, substArithMap, subst_cache);
         	}
         	else {
-	    		if (!varSub.isHigh())
+	    		if (!varSub.isEpsilonPositive())
 	    			return reduceCVarSub(inode._high, substMap, substArithMap, subst_cache);
 	    		else
 	    			return reduceCVarSub(inode._low, substMap, substArithMap, subst_cache);        		
@@ -2734,6 +2840,11 @@ public class XADD {
             return decisions;
         }
         
+        public HashSet<ExprDec> collectDecisions() {
+            HashSet<ExprDec> decisions = new HashSet<ExprDec>();
+            collectDecisions(decisions);
+            return decisions;
+        }
 
         public HashSet<String> collectVars() {
             HashSet<String> vars = new HashSet<String>();
@@ -2756,6 +2867,8 @@ public class XADD {
         public abstract void collectNodes(HashSet<XADDNode> nodes);
         
         public abstract void collectBoundaries(HashSet<Double> nodes, String var);
+        
+        public abstract void collectDecisions(HashSet<ExprDec> decisions);
 
 		public abstract DecisionBoundary getDecisionBoundary();
 
@@ -2857,6 +2970,10 @@ public class XADD {
                 return 1;
             }
         }
+
+		public void collectDecisions(HashSet<ExprDec> decisions) {
+			return;
+		}
 
     }
 
@@ -3119,6 +3236,16 @@ public class XADD {
         public String toString(boolean format) {
             return toString(0, format);
         }
+
+		public void collectDecisions(HashSet<ExprDec> decisions) {
+            if(this.getDecision() instanceof ExprDec){
+                decisions.add((ExprDec) this.getDecision());
+        	}
+        
+	        getExistNode(_low).collectDecisions(decisions);
+	        getExistNode(_high).collectDecisions(decisions);
+			
+		}
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
@@ -3263,6 +3390,34 @@ public class XADD {
 
         public String toString(boolean format) {
             return _expr.toString(format);
+        }
+        
+        // returns the boundary of this decision if it is univariate
+        // otherwise return null
+        public Double getBoundary(String var) {
+        	CompExpr comp = _expr;
+        	HashSet<String> varSet = new HashSet<String>();
+        	comp.collectVars(varSet);
+        	// check to make sure only one var in the expression
+        	if (varSet.size() == 1) {
+	    	    // Takes ArithExpr expr1 linear in var, returns (coef,expr2) where expr1 = coef*x + expr2
+	            CoefExprPair p = comp._lhs.removeVarFromExpr(var);
+	            ArithExpr lhs_isolated = p._expr;
+	            
+	            double var_coef = p._coef;
+	
+	            if (var_coef == 0d) {
+	                return null;
+	            }
+	
+	            ArithExpr new_rhs = (ArithExpr) new OperExpr(ArithOperation.MINUS, ExprLib.ZERO, new OperExpr(ArithOperation.PROD, new DoubleExpr(
+	                    1d / var_coef), lhs_isolated)).makeCanonical();
+	
+	            Double boundary=((DoubleExpr)new_rhs)._dConstVal;
+	            	    
+	    	    return boundary;
+        	}
+        	return null;
         }
 
         public Decision makeCanonical() {

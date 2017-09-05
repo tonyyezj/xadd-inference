@@ -32,10 +32,10 @@ public class NodeSearch {
 		return partialAssignment;
 	}
 	
-	public HashMap<String, Double> getValueMap() {
-		HashMap<String, Double> valueMap = new HashMap<String, Double>();
+	public HashMap<String, String> getValueMap() {
+		HashMap<String, String> valueMap = new HashMap<String, String>();
 		for (String var : partialAssignment.keySet()) {
-			valueMap.put(var, partialAssignment.get(var).getValue());
+			valueMap.put(var, partialAssignment.get(var).getValue() + partialAssignment.get(var).getEpsilonString());
 		}
 		return valueMap;
 	}
