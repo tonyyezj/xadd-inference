@@ -21,12 +21,11 @@ import xadd.XADDParseUtils;
 import xadd.XADDUtils;
 import xadd.ExprLib.ArithExpr;
 import xadd.ExprLib.CompExpr;
+import xadd.ExprLib.CompOperation;
 import xadd.ExprLib.DoubleExpr;
 import xadd.XADD.ExprDec;
 import xadd.XADD.XADDLeafMinOrMax;
 import xadd.XADD.XADDTNode;
-
-
 
 
 public class BucketElimination {
@@ -41,10 +40,10 @@ public class BucketElimination {
     public static boolean  DISPLAY_RAW_FACTORS = false; 
     public static boolean TIEBREAK = false;
     
-    public static int NUM_FACTORS =3;
+    public static int NUM_FACTORS =5;
     public double CVAR_LB = 0;
     public double CVAR_UB = 10;
-    public static int XADDLIMIT = 1000000; 
+    public static int XADDLIMIT = 1; 
     
     public static boolean RECOVER_HINGE_PTS = true;
     public static boolean USEEXACT = false;
@@ -73,7 +72,7 @@ public class BucketElimination {
 	}
 	
 	public static String string = "([x1 < x2] ([x2 < x3] ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ) ([x2 < x3] ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ) )";
-	public static String ex1 = "( [x1 < {{val}} + x3] ( [x2 > {{val2}} + x4] ( [x1 - x2] ) ( [x2 - x1] ) ) ( [x1 - x2] ) )";
+	public static String ex1 = "( [x1 < {{val}} + x3] ( [x2 > {{val2}} + x4] ( [x1 - x2] ) ( [x2 - x1] ) ) ( [x2 - x1] ) )";
 	public static String ex2 = "( {{placeholder}} ( [6 - 1/5*x1] ) ( [0] ) )";
 	
 	public static BucketElimination buildBEProblem(String xaddString) throws Exception {
@@ -97,8 +96,6 @@ public class BucketElimination {
 	        	be._context.showGraph(xadd, "Parsed factor: " + factor);  
 	        }
 		}
-
-        
         return be;
     }
     
@@ -382,17 +379,40 @@ public class BucketElimination {
 	
 	
 	/**
-	 * Add all decisions in each XADD in the arraylist into HashSet
+	 * put all decisions in each (combined) factor in the minibucket in the arraylist in a HashSet
 	 * Perform bounds analysis for the MAX operation and add new inequalities into HashSet
-	 * 
+	 * return one hashset of all inequalities
 	 */
 	private HashSet<ExprDec>  getDecisions(ArrayList<Integer> factors, String var) {
-		HashSet<ExprDec> decisionSet = new HashSet<ExprDec>();
+		ArrayList<HashSet<ExprDec>> decisionSetList = new ArrayList<HashSet<ExprDec>>();
+		HashSet<ExprDec> allDecisionsSet = new HashSet<ExprDec>();
 		for (Integer factor : factors) {
+			HashSet<ExprDec> decisionSet = new HashSet<ExprDec>();
 			decisionSet.addAll(_context.getExistNode(factor).collectDecisions());
+			decisionSetList.add(decisionSet);
+			allDecisionsSet.addAll(decisionSet);
 		}
-		decisionSet.addAll(_context.getDecisionsFromMaxOp(decisionSet, var, CVAR_LB, CVAR_UB));
-		return decisionSet;
+		
+		// construct inequalities
+		ArrayList<HashSet<ArithExpr>> lowerBoundDecisions = new ArrayList<HashSet<ArithExpr>>();
+		ArrayList<HashSet<ArithExpr>> upperBoundDecisions = new ArrayList<HashSet<ArithExpr>>();
+		_context.getLowerUpperBoundDecisions(decisionSetList, lowerBoundDecisions, upperBoundDecisions, var, CVAR_LB, CVAR_UB);
+		
+		for (int i = 0; i < decisionSetList.size(); i++) {
+			for (int j = 0; j < i; j++) {
+				HashSet<ExprDec> decisions = new HashSet<ExprDec>();
+				// UB > LB Constraints
+				decisions.addAll(_context.getGreaterThanConstraints(lowerBoundDecisions.get(i), upperBoundDecisions.get(j)));
+				decisions.addAll(_context.getGreaterThanConstraints(lowerBoundDecisions.get(j), upperBoundDecisions.get(i)));
+				// Inequalities to find greatest lower bound
+				decisions.addAll(_context.getGreaterThanConstraints(lowerBoundDecisions.get(i), lowerBoundDecisions.get(j)));
+				// Inequalities to find least upper bound
+				decisions.addAll(_context.getGreaterThanConstraints(upperBoundDecisions.get(i), upperBoundDecisions.get(j)));
+			
+				allDecisionsSet.addAll(decisions);
+			}
+		}
+		return allDecisionsSet;
 	}
 
 	/**
@@ -509,7 +529,7 @@ public class BucketElimination {
 	        
 	        System.out.println(" - remaining factors: " + factors.size());
 
-	
+	        // TODO: figure out cache flushing that's efficient for mini buckets ...
 //	        if (USEEXACT) {
 //		        _context.clearSpecialNodes();
 //		        for (Integer xadd : _alAllFactors)
@@ -560,7 +580,9 @@ public class BucketElimination {
 			{
 	    		//double xComp = (x.partialAssignment.size() == n && y.partialAssignment.size() == n) ? ((DoubleExpr)((XADDTNode)_context.getNode(x.getG()))._expr)._dConstVal : x.getF_val();
 				//double yComp = (x.partialAssignment.size() == n && y.partialAssignment.size() == n) ? ((DoubleExpr)((XADDTNode)_context.getNode(y.getG()))._expr)._dConstVal : y.getF_val();
-	       		double xComp = x.getF_val();
+//				double xG_Val = x.getG_val(_context);
+//				double yG_Val = y.getG_val(_context);
+				double xComp = x.getF_val();
 				double yComp = y.getF_val();        		
 	    		if (xComp > yComp) 
 					return -1;
@@ -572,6 +594,7 @@ public class BucketElimination {
 	//        						
 				if (!TIEBREAK)
 					return -1;
+//					return xG_Val > yG_Val ? 1 : -1;
 				else {
 					if (x.getPartialAssignment().size() > y.getPartialAssignment().size())
 						return -1;
@@ -664,6 +687,8 @@ public class BucketElimination {
 		HashMap<String, ArithExpr> substArithMap = getSubArithMap(substMap);
 		for (ExprDec dec : decisionSet) {
     		CompExpr comp = ((ExprDec) dec)._expr;
+    		if (comp._type == CompOperation.EQ || comp._type == CompOperation.NEQ)
+    			continue;
     		comp = comp.substitute(substArithMap);
     		ExprDec postSubDec = _context.new ExprDec(comp);	
     		Double boundary = postSubDec.getBoundary(var);
@@ -685,11 +710,14 @@ public class BucketElimination {
 		ArrayList<NodeSearch> succ=new ArrayList<NodeSearch>();
 		int numberBucket=var_order.size() - node.getPartialAssignment().size() - 1;
 		String var=var_order.get(numberBucket);
+		
+		// generate boundary points
 		HashSet<ExprDec> decisionSet = new HashSet<ExprDec>();
 		decisionSet.addAll(decisionSetByBucket.get(numberBucket));
 		if (numberBucket != 0)
 			decisionSet.addAll(decisionSetByBucket.get(numberBucket - 1));
 		HashSet<Double> boundariesFromDecisions = getBoundariesFromDecisions(decisionSet, node.getPartialAssignment(), var);
+		
 		//compute newG, newH and newF
 		ArrayList<Integer> result=computeNewGHandF(node,projected_factorsByBucket, original_factorsByBucket, messagesByBucket, numberBucket);
 		Integer newG = result.get(0);
@@ -698,22 +726,17 @@ public class BucketElimination {
 
 		//for each value (boundary) in the domain of X_{p+1} create a new node
 		ArrayList values=new ArrayList();
+		
+		//Boolean variable
 		if (_context._alBooleanVars.contains(var)) {
 			// Boolean variable
 			values.add(true);
 			values.add(false);
 			
 		} 
+		//Continuous variable
 		else {
-//			 //Continuous variable
-//			if (DISCRETIZE) {
-//				Double increment = (CVAR_UB - CVAR_LB)/DISCRETE_SEGMENTS;
-//				for (int i = 1; i < DISCRETE_SEGMENTS; i++) {
-//					Double curr = CVAR_LB + increment*i;
-//					values.add(new VarSubstitution(curr, true));
-//					//values.add(new CVarSubstitution(curr, false));
-//				}			
-//			}
+//			 
 			HashSet<Double> heuristicBoundaries = _context.getExistNode(newF).collectBoundaries(var);
 			HashSet<Double> allBoundaries = new HashSet<Double>();
 			if (RECOVER_HINGE_PTS)
@@ -730,7 +753,7 @@ public class BucketElimination {
 			for (Double point : allBoundaries) {
 				values.add(new VarSubstitution(point, Epsilon.POSITIVE));
 				values.add(new VarSubstitution(point, Epsilon.NEGATIVE));
-				values.add(new VarSubstitution(point, Epsilon.ZERO));
+				//values.add(new VarSubstitution(point, Epsilon.ZERO));
 			}
 		}
 	
@@ -774,17 +797,19 @@ public class BucketElimination {
 					VarSubstitution sub = (VarSubstitution) val;
 					newPartialAssignment.put(var, sub);
 					subsCont.put(var, sub);
-					newGWithValue=_context.substituteCVar(newG, subsCont, varOrder);
-					newHWithValue=_context.substituteCVar(newH, subsCont, varOrder);
-					newFWithValue=_context.substituteCVar(newF, subsCont, varOrder);					
+					newGWithValue=_context.substituteCVar(newG, subsCont);
+					newHWithValue=_context.substituteCVar(newH, subsCont);
+					newFWithValue=_context.substituteCVar(newF, subsCont);					
 //				}
 				
 			}
-			if (SHOW_GRAPHS){
-			  	_context.getGraph(newGWithValue).launchViewer("new G with substitution: " + _context.collectVars(newGWithValue));
-			  	_context.getGraph(newHWithValue).launchViewer("new H with substitution: " + _context.collectVars(newHWithValue));
-			  	_context.getGraph(newFWithValue).launchViewer("new F with substitution: " + _context.collectVars(newFWithValue));
-			}		
+			//if (SHOW_GRAPHS){
+			  	//_context.getGraph(newGWithValue).launchViewer("new G with substitution: " + _context.collectVars(newGWithValue));
+			//_context.getGraph(newH).launchViewer("new H " + _context.collectVars(newH));  	
+			//_context.exportXADDToFile(newH, "./src/bucketelim/h.xadd");
+			//_context.getGraph(newHWithValue).launchViewer("new H with substitution: " + _context.collectVars(newHWithValue));
+			  	//_context.getGraph(newFWithValue).launchViewer("new F with substitution: " + _context.collectVars(newFWithValue));
+			//}		
 	
 		    double f_val = ((DoubleExpr)((XADDTNode)_context.getNode(newFWithValue))._expr)._dConstVal; 
 		    NodeSearch nodeSucc=new NodeSearch(newPartialAssignment, newGWithValue, newHWithValue ,f_val);
@@ -860,7 +885,7 @@ public class BucketElimination {
 		 	  	_context.getGraph(gMinus1).launchViewer("sum new factors in bucket: " );
 		 	  	
 		 }*/
-	   // _context.getGraph(newG).launchViewer("factors: " + _context.collectVars(newG));
+	    //_context.getGraph(newG).launchViewer("factors: " + _context.collectVars(newG));
 	    newG = _context.applyInt(gMinus1,newG,  XADD.SUM);
 	    /*if (SHOW_GRAPHS){
 	 	  	_context.getGraph(newG).launchViewer("sum new factors in bucket: " );
@@ -873,7 +898,7 @@ public class BucketElimination {
 	 	  	
 	    }*/
 		
-		newG= _context.substituteCVar(newG, subsCont, varOrder); //XADD with only one variable
+		newG= _context.substituteCVar(newG, subsCont); //XADD with only one variable
 		/*if (SHOW_GRAPHS){
 	 	  	_context.getGraph(newG).launchViewer("sum new factors in bucket: " );
 	 	  	
@@ -885,31 +910,30 @@ public class BucketElimination {
 	}
 
 	private int computeH(int hMinus1, ArrayList<Integer> messagesInBucket, ArrayList<Integer> messagesCreatedInBucket, HashMap<String, Boolean> subsBoolean, HashMap<String, VarSubstitution> subsCont) {
-
+		
 		//_context.getGraph(hMinus1).launchViewer("h-1: " + _context.collectVars(hMinus1));
 		int newH1 = combineFactors(messagesInBucket);
+	    //_context.exportXADDToFile(newH1, "./src/bucketelim/abc.xadd");
 		//_context.getGraph(newH1).launchViewer("(presub) messages: " + _context.collectVars(newH1));
 	    newH1=_context.substituteBoolVars(newH1, subsBoolean); 
-		newH1= _context.substituteCVar(newH1, subsCont, varOrder); //XADD with only one variable
+		newH1= _context.substituteCVar(newH1, subsCont); //XADD with only one variable
 		//_context.getGraph(newH1).launchViewer("messages: " + _context.collectVars(newH1));
 	    
 	    int newH2 = combineFactors(messagesCreatedInBucket);
 	    //_context.getGraph(newH2).launchViewer("(presub) projected: " + _context.collectVars(newH2));
 	    newH2=_context.substituteBoolVars(newH2, subsBoolean); 
-		newH2= _context.substituteCVar(newH2, subsCont, varOrder); //XADD with only one variable
+	   
+		newH2= _context.substituteCVar(newH2, subsCont); //XADD with only one variable
 		//_context.getGraph(newH2).launchViewer("projected: " + _context.collectVars(newH2));
 	   
-	    int newH = _context.applyInt(hMinus1, newH1,XADD.SUM);
-	    newH = _context.applyInt(newH, newH2,XADD.MINUS);
-
+	    int newH = _context.applyInt(hMinus1, newH2,XADD.MINUS);
+	    // _context.getGraph(newH).launchViewer("h{j-1} - h{proj_j}: " + _context.collectVars(newH));
+	    newH = _context.applyInt(newH, newH1,XADD.SUM);	    
+	    //newH=_context.substituteBoolVars(newH, subsBoolean); 
+	    //newH= _context.substituteCVar(newH, subsCont, varOrder); //XADD with only one variable
 	    newH=_context.reduceLP(newH);
 	    //_context.getGraph(newH).launchViewer("H: " + _context.collectVars(newH));
 		return newH;
-	}
-
-	
-	
-   
-
-	
+//		_context.importXADDFromFile(filename)
+	}	
 }

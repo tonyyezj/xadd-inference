@@ -3,6 +3,10 @@ package bucketelim;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import xadd.ExprLib.DoubleExpr;
+import xadd.XADD;
+import xadd.XADD.XADDTNode;
+
 public class NodeSearch {
 
 	HashMap<String,VarSubstitution> partialAssignment;
@@ -27,6 +31,9 @@ public class NodeSearch {
 		return f_val;
 	}
 	
+	public double getG_val(XADD _context) {
+		return ((DoubleExpr)((XADDTNode)_context.getNode(getG()))._expr)._dConstVal;
+	}
 	
 	public HashMap<String,VarSubstitution> getPartialAssignment() {
 		return partialAssignment;

@@ -6,7 +6,7 @@ public class VarSubstitution {
 	private Epsilon epsilon; // flag for right or left side from which to evaluate the XADD
 	private boolean isBool;
 	
-	enum Epsilon {
+	public enum Epsilon {
 		POSITIVE,
 		NEGATIVE,
 		ZERO

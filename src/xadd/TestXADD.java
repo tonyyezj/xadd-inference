@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import bucketelim.VarSubstitution;
 import xadd.LinearXADDMethod.NamedOptimResult;
 import xadd.XADD.*;
 import xadd.ExprLib.*;
@@ -24,18 +25,38 @@ public class TestXADD {
     	//testMinOut(args);
 		 
 	        XADD xadd_context = new XADD();
-	        int f1 = xadd_context.buildCanonicalXADDFromString("( [y = 5 - x] ( [1] ) ( [0] ) )");
-	        int f2 = xadd_context.buildCanonicalXADDFromString("( [y = x] ( [1] ) ( [0] ) )");
-	        int yRestrict = xadd_context.buildCanonicalXADDFromString("( [y > 5] ( [0] ) ( [y < 0] ( [0] ) ( [1] ) ) )");
-	        int xRestrict1 = xadd_context.buildCanonicalXADDFromString("( [x > 5] ( [0] ) ( [x < 0] ( [0] ) ( [5 - x] ) ) )");
-	        int xRestrict2 = xadd_context.buildCanonicalXADDFromString("( [x > 5] ( [0] ) ( [x < 0] ( [0] ) ( [x] ) ) )");
-	        int multf1 = xadd_context.apply(yRestrict, xRestrict1, XADD.PROD);
-	        int multf2 = xadd_context.apply(yRestrict, xRestrict2, XADD.PROD);
-	        int xaddrRes = xadd_context.apply(multf1, multf2, XADD.MAX);
-	        
-	        
-	        Graph gRes = xadd_context.getGraph(xadd_context.reduceLP(xaddrRes));
-	        gRes.launchViewer();
+	        int msg = xadd_context.importXADDFromFile("./src/bucketelim/sample.xadd");
+	        msg=xadd_context.reduceLP(msg);
+	        int htest = xadd_context.importXADDFromFile("./src/bucketelim/htest.xadd");
+	          
+	        xadd_context.getGraph(msg).launchViewer("msg: " + xadd_context.collectVars(msg));
+	        HashMap<String, VarSubstitution> subsCont = new HashMap<String, VarSubstitution>();
+	        HashMap<String, VarSubstitution> subsCont2 = new HashMap<String, VarSubstitution>();
+	        subsCont.put("x5", new VarSubstitution(0, VarSubstitution.Epsilon.NEGATIVE ));
+	        subsCont.put("x4", new VarSubstitution(10, VarSubstitution.Epsilon.NEGATIVE ));
+	        int method1= xadd_context.substituteCVar(msg, subsCont);
+	        method1=xadd_context.reduceLP(method1);
+	        xadd_context.getGraph(method1).launchViewer("before sub x3: " + xadd_context.collectVars(method1));
+	        subsCont2.put("x3", new VarSubstitution(3, VarSubstitution.Epsilon.POSITIVE ));
+	        method1= xadd_context.substituteCVar(method1, subsCont2);
+	        xadd_context.getGraph(method1).launchViewer("after sub x3: " + xadd_context.collectVars(method1));
+	        subsCont.putAll(subsCont2);
+	        int method2= xadd_context.substituteCVar(msg, subsCont);
+	        xadd_context.getGraph(method2).launchViewer("(method2) after sub x3: " + xadd_context.collectVars(method2));
+	        int method3= xadd_context.substituteCVar(htest, subsCont2);
+	        xadd_context.getGraph(method3).launchViewer("method 3: " + xadd_context.collectVars(method3));
+//	        int f1 = xadd_context.buildCanonicalXADDFromString("( [y = 5 - x] ( [1] ) ( [0] ) )");
+//	        int f2 = xadd_context.buildCanonicalXADDFromString("( [y = x] ( [1] ) ( [0] ) )");
+//	        int yRestrict = xadd_context.buildCanonicalXADDFromString("( [y > 5] ( [0] ) ( [y < 0] ( [0] ) ( [1] ) ) )");
+//	        int xRestrict1 = xadd_context.buildCanonicalXADDFromString("( [x > 5] ( [0] ) ( [x < 0] ( [0] ) ( [5 - x] ) ) )");
+//	        int xRestrict2 = xadd_context.buildCanonicalXADDFromString("( [x > 5] ( [0] ) ( [x < 0] ( [0] ) ( [x] ) ) )");
+//	        int multf1 = xadd_context.apply(yRestrict, xRestrict1, XADD.PROD);
+//	        int multf2 = xadd_context.apply(yRestrict, xRestrict2, XADD.PROD);
+//	        int xaddrRes = xadd_context.apply(multf1, multf2, XADD.MAX);
+//	        
+//	        
+//	        Graph gRes = xadd_context.getGraph(xadd_context.reduceLP(xaddrRes));
+//	        gRes.launchViewer();
 //	        int ixadd = TestBuild(xadd_context, "./src/xadd/ex/test7.xadd");
 //
 //	        Graph g1 = xadd_context.getGraph(node);
