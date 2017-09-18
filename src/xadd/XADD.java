@@ -785,9 +785,18 @@ public class XADD {
 
     //Symbolic substitution methods
     
+	public static HashMap<String, ArithExpr> getSubArithMap(HashMap<String, VarSubstitution> map) {
+    	HashMap<String, ArithExpr> subArithMap = new HashMap<String, ArithExpr>();
+    	for (String var : map.keySet()) {
+    		subArithMap.put(var,  new DoubleExpr(map.get(var).getValue()));
+    	}
+    	return subArithMap;
+	}
+    
     //the following substitute method is to adapt for the LHS/RHS evaluation for continuous vars   
     // ensure substitutions done in the same order ... due to the different results obtained
     // by switching the orders 
+    public static boolean ACCOUNT_FOR_DISCONTINUITY = false;
     public int substituteCVar(int node_id, HashMap<String, VarSubstitution> substMap) {
 //    	int currNode = node_id;
 //    	for (int i = varOrder.size() - 1; i >= 0 ; i--) {
@@ -804,13 +813,18 @@ public class XADD {
 //    	return currNode;
     	
     	HashMap<String, ArithExpr> subArithMap = new HashMap<String, ArithExpr>();
-    	for (String var : substMap.keySet()) {
-    		Double value = substMap.get(var).getValue();
-    		Boolean isPositiveEpsilon = substMap.get(var).isEpsilonPositive();
-    		subArithMap.put(var,  isPositiveEpsilon ? new DoubleExpr(value + EPSILON) : new DoubleExpr(value - EPSILON));
+    	if (ACCOUNT_FOR_DISCONTINUITY) {
+	    	for (String var : substMap.keySet()) {
+	    		Double value = substMap.get(var).getValue();
+    			Boolean isPositiveEpsilon = substMap.get(var).isEpsilonPositive();
+    			subArithMap.put(var,  isPositiveEpsilon ? new DoubleExpr(value + EPSILON) : new DoubleExpr(value - EPSILON));
+	    	}
+    		return reduceCVarSub(node_id, substMap, subArithMap, new HashMap<Integer, Integer>());
     	}
-    	
-    	return reduceCVarSub(node_id, substMap, subArithMap, new HashMap<Integer, Integer>());
+    	else {
+    		subArithMap = getSubArithMap(substMap);
+    		return reduceSub(node_id, subArithMap, new HashMap<Integer, Integer>());
+    	}
         
     }
     

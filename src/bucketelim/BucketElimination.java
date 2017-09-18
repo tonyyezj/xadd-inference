@@ -40,30 +40,35 @@ public class BucketElimination {
     public static boolean  DISPLAY_RAW_FACTORS = false; 
     public static boolean TIEBREAK = false;
     
-    public static int NUM_FACTORS =5;
+    public static int NUM_FACTORS =9;
     public double CVAR_LB = 0;
     public double CVAR_UB = 10;
-    public static int XADDLIMIT = 1; 
+    public static int XADDLIMIT = 100000; 
     
-    public static boolean RECOVER_HINGE_PTS = true;
+    public static boolean RECOVER_HINGE_PTS = false;
     public static boolean USEEXACT = false;
     public static boolean ONEPASS = false;
 
 	public static void main(String[] args) throws Exception {
-		// constant case
-		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [10] ) ( [0] ) )");
-		// min(x_i, x_{i+1})
-		//BucketElimination be = buildBEProblem("( [x1 < 50] ( [x1] ) ( [x2 - 50] ) )");
+
 	
 		// max(x_i, x_{i+1})
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x2] ) ( [x1] ) )");
 		// 2*max(x_i, x_{i+1}) + 1
-		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [2*x2 + 1] ) ( [3*x1 + 1] ) )");
+		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [2*x2 + 1] ) ( [2*x1 + 1] ) )");
 		// max - min
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x2 - x1] ) ( [x1 - x2] ) )");
-		//misc
+		
+		BucketElimination be = buildBEProblem("( [x1 < x2 + x3] ( [x1 + x4] ) ( [x2 + x3 + x4] ) )");		
+		
+		
+		//misc discontinuous?
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x3 > x4] ( [x3] ) ( [x5] ))( [x5] ))");
-		BucketElimination be = buildBEProblem(ex1);
+		//BucketElimination be = buildBEProblem(ex1);
+		// constant case
+		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [10] ) ( [0] ) )");
+		// min(x_i, x_{i+1})
+		//BucketElimination be = buildBEProblem("( [x1 < 50] ( [x1] ) ( [x2 - 50] ) )");
 		if (USEEXACT)
 			be.solveBucketElim();
 			//be.solveMiniBucketElim(2);
@@ -71,9 +76,9 @@ public class BucketElimination {
 			be.solveMiniBucketElim(XADDLIMIT);
 	}
 	
-	public static String string = "([x1 < x2] ([x2 < x3] ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ) ([x2 < x3] ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ) )";
-	public static String ex1 = "( [x1 < {{val}} + x3] ( [x2 > {{val2}} + x4] ( [x1 - x2] ) ( [x2 - x1] ) ) ( [x2 - x1] ) )";
-	public static String ex2 = "( {{placeholder}} ( [6 - 1/5*x1] ) ( [0] ) )";
+	//public static String string = "([x1 < x2] ([x2 < x3] ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ) ([x2 < x3] ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ) )";
+	//public static String ex1 = "( [x1 < {{val}} + x3] ( [x2 > {{val2}} + x4] ( [x1 - x2] ) ( [x2 - x1] ) ) ( [x2 - x1] ) )";
+	//public static String ex2 = "( {{placeholder}} ( [6 - 1/5*x1] ) ( [0] ) )";
 	
 	public static BucketElimination buildBEProblem(String xaddString) throws Exception {
     	
@@ -87,7 +92,6 @@ public class BucketElimination {
 			String replaceStr2 = "x" + j;
 			String replaceStr1 = "x" + i;
 			String xaddStr = xaddString.replace("{{placeholder}}", i == 1 ? "[x2 > 5 - x1]" : "[x2 < x1]").replace("{{val}}", Integer.toString(i)).replace("{{val2}}", Integer.toString(i+1)).replace("x5 ", replaceStr5 + " ").replace("x5]", replaceStr5 + "]").replace("x4 ", replaceStr4 + " ").replace("x4]", replaceStr4 + "]").replace("x3 ", replaceStr3 + " ").replace("x3]", replaceStr3 + "]").replace("x2 ", replaceStr2 + " ").replace("x2]", replaceStr2 + "]").replace("x1 ", replaceStr1 + " ").replace("x1]", replaceStr1  + "]");
-				//String xaddStr = xaddString.replaceAll("x2", "x"+Integer.toString(i+1).replaceAll("x1", "x"+Integer.toString(i)));
 	        int xadd = ParseXADDString(be._context, xaddStr);
 	        be._hmFactor2Name.put(xadd, factor);
 	        be._alAllFactors.add(xadd);			
@@ -673,18 +677,10 @@ public class BucketElimination {
 		
 	}
 	
-	private HashMap<String, ArithExpr> getSubArithMap(HashMap<String, VarSubstitution> map) {
-    	HashMap<String, ArithExpr> subArithMap = new HashMap<String, ArithExpr>();
-    	for (String var : map.keySet()) {
-    		subArithMap.put(var,  new DoubleExpr(map.get(var).getValue()));
-    	}
-    	return subArithMap;
-	}
-	
 	// finds constant boundaries after substitution into each decision
 	private HashSet<Double> getBoundariesFromDecisions(HashSet<ExprDec> decisionSet, HashMap<String, VarSubstitution> substMap, String var) {
 		HashSet<Double> boundarySet = new HashSet<Double>();
-		HashMap<String, ArithExpr> substArithMap = getSubArithMap(substMap);
+		HashMap<String, ArithExpr> substArithMap = XADD.getSubArithMap(substMap);
 		for (ExprDec dec : decisionSet) {
     		CompExpr comp = ((ExprDec) dec)._expr;
     		if (comp._type == CompOperation.EQ || comp._type == CompOperation.NEQ)
@@ -751,15 +747,17 @@ public class BucketElimination {
 			allBoundaries.add(CVAR_UB);
 
 			for (Double point : allBoundaries) {
-				values.add(new VarSubstitution(point, Epsilon.POSITIVE));
-				values.add(new VarSubstitution(point, Epsilon.NEGATIVE));
-				//values.add(new VarSubstitution(point, Epsilon.ZERO));
+				if (XADD.ACCOUNT_FOR_DISCONTINUITY) {
+					values.add(new VarSubstitution(point, Epsilon.POSITIVE));
+					values.add(new VarSubstitution(point, Epsilon.NEGATIVE));
+				}
+				else
+					values.add(new VarSubstitution(point, Epsilon.ZERO));
 			}
 		}
 	
 		for(Object val:  values){
 			HashMap<String,VarSubstitution> newPartialAssignment = (HashMap<String,VarSubstitution>) node.getPartialAssignment().clone();
-	
 			HashMap<String, Boolean> subsBoolean=new HashMap<String, Boolean>();
 			HashMap<String, VarSubstitution> subsCont = new HashMap<String, VarSubstitution>();
 			int newGWithValue;
@@ -768,13 +766,12 @@ public class BucketElimination {
 			if (_context._alBooleanVars.contains(var)) {
 				// Boolean variable
 				if((Boolean)val){
-					newPartialAssignment.put(var,new VarSubstitution(1.0, true));
 					subsBoolean.put(var,true);
-	
+					newPartialAssignment.put(var, new VarSubstitution(1, true));
 				}
 				else{
-					newPartialAssignment.put(var,new VarSubstitution(1.0, true));
 					subsBoolean.put(var,false);
+					newPartialAssignment.put(var, new VarSubstitution(0, true));
 	
 				}
 				
@@ -786,14 +783,6 @@ public class BucketElimination {
 			}
 			else{		
 				
-//				if (!USE_ALT_CVARSUB) {
-//					newPartialAssignment.put(var,(Double) val);
-//					subsCont.put(var, new DoubleExpr((Double)val) );
-//					newGWithValue=_context.substitute(newG, subsCont);
-//					newHWithValue=_context.substitute(newH, subsCont);
-//					newFWithValue=_context.substitute(newF, subsCont);
-//				}
-//				else {
 					VarSubstitution sub = (VarSubstitution) val;
 					newPartialAssignment.put(var, sub);
 					subsCont.put(var, sub);
