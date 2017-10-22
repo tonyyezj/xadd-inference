@@ -2,6 +2,8 @@ package bucketelim;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.TreeMap;
 
 import xadd.ExprLib.DoubleExpr;
 import xadd.XADD;
@@ -39,16 +41,26 @@ public class NodeSearch {
 		return partialAssignment;
 	}
 	
-	public HashMap<String, String> getValueMap() {
-		HashMap<String, String> valueMap = new HashMap<String, String>();
-		for (String var : partialAssignment.keySet()) {
+	/*
+	public TreeMap<String, String> getValueMap() {
+		TreeMap<String, String> valueMap = new TreeMap<String, String>();
+		List<String> sortedKeys = new ArrayList<String>(partialAssignment.keySet());
+		sortedKeys.sort(BucketElimination.varComparator());
+		for (String var : sortedKeys) {
 			valueMap.put(var, partialAssignment.get(var).getValue() + partialAssignment.get(var).getEpsilonString());
 		}
 		return valueMap;
 	}
+	*/
 	
 	public String toString(){
-		return "Assign: "+getValueMap();
+		List<String> sortedKeys = new ArrayList<String>(partialAssignment.keySet());
+		sortedKeys.sort(BucketElimination.varComparator());
+		String assignments = "Assign: ";
+		for (String var : sortedKeys)
+			assignments += var + " = " + partialAssignment.get(var).getValue().toString() + partialAssignment.get(var).getEpsilonString() + "  ";
+		return assignments;
+		//return "Assign: "+ getValueMap();
 	}
 	
 	

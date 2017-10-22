@@ -1,7 +1,11 @@
 package bucketelim;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,32 +38,54 @@ public class BucketElimination {
 	public HashMap<Integer,String> _hmFactor2Name = null;
     public ArrayList<Integer> _alAllFactors  = null;
     public static List<String> varOrder;
+    
     public boolean DISPLAY = false;
     public boolean SHOW_GRAPHS =false;
     public boolean SHOW_PLOTS = false;
     public static boolean  DISPLAY_RAW_FACTORS = false; 
+    
     public static boolean TIEBREAK = false;
+    public static boolean NAIVEORDER = true; // this is the linear elimination order (sequentially)
     
-    public static int NUM_FACTORS =9;
-    public double CVAR_LB = 0;
+    public static int NUM_FACTORS = 20;
+    public double CVAR_LB = -10;
     public double CVAR_UB = 10;
-    public static int XADDLIMIT = 100000; 
+    public static int XADDLIMIT = 1000; // limit on the XADD size for minibucket elimination
     
-    public static boolean RECOVER_HINGE_PTS = false;
-    public static boolean USEEXACT = false;
-    public static boolean ONEPASS = false;
+    public static boolean RECOVER_HINGE_PTS = false; // non-recursive hinge point recovery for minibucket elimination
+    public static boolean USEEXACT = false; // use the exact bucket elimination algorithm (this only outputs optimal value)
+    										// if optimal assignments required, use the minibuckets one and set XADDLIMIT to high
+    public static boolean ONEPASS = true; // true = will choose the best instantiation for the current var, based on the current heuristic val.
+
+    public static int NUM_VAR_IN_FACTOR = 30;
+    public static int treeWidth = 1;
 
 	public static void main(String[] args) throws Exception {
 
-	
 		// max(x_i, x_{i+1})
-		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x2] ) ( [x1] ) )");
+		//for (int treeWidth = 1; treeWidth <= 7; treeWidth++) {
+		//String twString = increaseTW("( [x1 < x2] ( [x2] ) ( [x1] ) )", treeWidth);
+
+		//String twString = increaseTW("( [x1 > x2] ( [x2 > x3] ( [x1 + x2] ) ( [x1 + x3] )) ( [x2 > x3] ( [x2 + x2] ) ( [x2 + x3] ) ) )", treeWidth);
+
+		//String twString = increaseTW("( [x1 > x2] ( [x2 > x3] ( [0] ) ( [x1] )) ( [x2 > x3] ( [x1] ) ( [0] ) ) )", treeWidth);
+		
+		
+		// if x1 > x2 xor x2 > x3 then f = max(x3, x2) else f = min(x1, x2)
+		//String twString = increaseTW("( [x1 > x2] ( [x2 > x3] ( [x2] ) ( [x3] )) ( [x2 > x3] ( [x2] ) ( [x1] ) ) )", treeWidth);
+		
+		// if x1 > x2 xor x2 > x3 then f = max(x3, x2) - min(x3, x2) else f = min(x1, x2) - max(x1, x2)
+		String twString = increaseTW("( [x1 > x2] ( [x2 > x3] ( [x2 - x1] ) ( [x3 - x2] )) ( [x2 > x3] ( [x2 - x3] ) ( [x1 - x2] ) ) )", treeWidth);
 		// 2*max(x_i, x_{i+1}) + 1
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [2*x2 + 1] ) ( [2*x1 + 1] ) )");
 		// max - min
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x2 - x1] ) ( [x1 - x2] ) )");
 		
-		BucketElimination be = buildBEProblem("( [x1 < x2 + x3] ( [x1 + x4] ) ( [x2 + x3 + x4] ) )");		
+		//String twString = increaseTW("( [x1 < x2] ( [x2 - x1] ) ( [x1 - x2] ) )", treeWidth);
+		
+		//BucketElimination be = buildBEProblem(new String[]{"( [x + y > 5] ( [5 - z] ) ( [x + y - z] ) )"
+		//		, "( [y + z > 7] ( [7] ) ( [y + z] ) )"}
+		//);		
 		
 		
 		//misc discontinuous?
@@ -69,40 +95,77 @@ public class BucketElimination {
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [10] ) ( [0] ) )");
 		// min(x_i, x_{i+1})
 		//BucketElimination be = buildBEProblem("( [x1 < 50] ( [x1] ) ( [x2 - 50] ) )");
+		
+		ArrayList<String> list = buildXADDStrings(twString);
+		BucketElimination be = buildBEProblem(list);
 		if (USEEXACT)
 			be.solveBucketElim();
-			//be.solveMiniBucketElim(2);
 		else
 			be.solveMiniBucketElim(XADDLIMIT);
+//	    PrintWriter writer = new PrintWriter(new FileOutputStream(new File("results.txt"), true /* append = true */));
+//	    writer.println(String.format("%d,%d", treeWidth, value));
+//	    writer.close();
 	}
 	
 	//public static String string = "([x1 < x2] ([x2 < x3] ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ) ([x2 < x3] ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ) )";
 	//public static String ex1 = "( [x1 < {{val}} + x3] ( [x2 > {{val2}} + x4] ( [x1 - x2] ) ( [x2 - x1] ) ) ( [x2 - x1] ) )";
 	//public static String ex2 = "( {{placeholder}} ( [6 - 1/5*x1] ) ( [0] ) )";
 	
-	public static BucketElimination buildBEProblem(String xaddString) throws Exception {
+	public static String increaseTW(String xaddString, int treeW) {
+		String newStr = xaddString;
+		String oldExpr = "x2";
+		String newExpr = oldExpr;
+		for (int i = 1; i < treeW; i++) {
+			newExpr = newExpr + " + " + "x" + (2+i);
+		}
+		newStr = newStr.replace(oldExpr + " ", newExpr + " ");
+		newStr = newStr.replace(oldExpr + "]", newExpr + "]");
+		return newStr;
+	}           
+	
+	
+	public static ArrayList<String> buildXADDStrings(String xaddString) throws Exception {
+		
+		ArrayList<String> factorList = new ArrayList<String>();
+		
+		for (int i = 1; i <= NUM_FACTORS; i++) {
+			ArrayList<String> replacements = new ArrayList<String>(); 
+			
+			for (int j = i; j <= NUM_VAR_IN_FACTOR + i - 1; j++) {
+				replacements.add("x" + j);
+			}
+			
+			String newString = xaddString;
+			
+			for (int k = NUM_VAR_IN_FACTOR - 1; k >= 0; k--) {
+				String var = "x" + (k + 1);
+				String replVar = replacements.get(k);
+				newString = newString.replace(var + " ", replVar + " ");
+				newString = newString.replace(var + "]", replVar + "]");
+			}
+			factorList.add(newString);
+		}
+		
+		return factorList;
+	}
+	
+
+	public static BucketElimination buildBEProblem(ArrayList<String> xaddString) throws Exception {
     	
     	BucketElimination be = new BucketElimination();
-		for (int i = 1; i <= NUM_FACTORS; i++) {
-			int j = i + 1;
-			String factor = "f" + i;
-			String replaceStr5 = "x" + (j+3);
-			String replaceStr4 = "x" + (j+2);
-			String replaceStr3 = "x" + (j+1);
-			String replaceStr2 = "x" + j;
-			String replaceStr1 = "x" + i;
-			String xaddStr = xaddString.replace("{{placeholder}}", i == 1 ? "[x2 > 5 - x1]" : "[x2 < x1]").replace("{{val}}", Integer.toString(i)).replace("{{val2}}", Integer.toString(i+1)).replace("x5 ", replaceStr5 + " ").replace("x5]", replaceStr5 + "]").replace("x4 ", replaceStr4 + " ").replace("x4]", replaceStr4 + "]").replace("x3 ", replaceStr3 + " ").replace("x3]", replaceStr3 + "]").replace("x2 ", replaceStr2 + " ").replace("x2]", replaceStr2 + "]").replace("x1 ", replaceStr1 + " ").replace("x1]", replaceStr1  + "]");
-	        int xadd = ParseXADDString(be._context, xaddStr);
-	        be._hmFactor2Name.put(xadd, factor);
+		for (int i = 0; i < xaddString.size(); i++) {
+			int xadd = ParseXADDString(be._context, xaddString.get(i));
+	        be._hmFactor2Name.put(xadd, "f"+i);
 	        be._alAllFactors.add(xadd);			
 	        
 	        if (DISPLAY_RAW_FACTORS) {
-	        	be._context.showGraph(xadd, "Parsed factor: " + factor);  
+	        	be._context.showGraph(xadd, "Parsed factor: " + "f"+i);  
 	        }
 		}
         return be;
     }
-    
+  	
+	
     public BucketElimination() throws Exception {
     	
         _context = new XADD();
@@ -138,16 +201,41 @@ public class BucketElimination {
     	return g;
     }    
     
-    
+    public static Comparator<String> varComparator() {
+		return new Comparator<String>() {
+			@Override
+			public int compare(String a, String b) {
+				a = a.replace("x", "");
+				b = b.replace("x", "");
+				Integer aVal = Integer.parseInt(a);
+				Integer bVal = Integer.parseInt(b);
+				
+				 if (aVal < bVal) {
+					 return -1;
+				 }
+				 else 
+					 return 1;
+			}
+		 };
+	 }
     
 	@SuppressWarnings("unchecked")
 	private List<String> getTWMinVarOrder() {
 
 		Graph g = getVariableConnectivityGraph(_alAllFactors);
+
 		if (DISPLAY) g.launchViewer("Variable connectivity");
 	
-		//List<String> var_order = "";
-		List<String> list = g.computeBestOrder();
+		List<String> list;
+		if (NAIVEORDER) {
+			 list = g.minfillSort(false);
+			 ArrayList<String> newList = new ArrayList(list);
+			 newList.sort(varComparator());
+			 return newList;
+		}
+		else
+			list = g.computeBestOrder();
+
 //		if (list != null && !list.isEmpty()) {
 //			if (list instanceof ArrayList) {
 //				var_order = 
@@ -478,7 +566,7 @@ public class BucketElimination {
 	}
 			
 	
-	public double solveMiniBucketElim(int maxSize) {
+	public long solveMiniBucketElim(int maxSize) {
     	
     	Timer timer = new Timer();
     	varOrder = getTWMinVarOrder();
@@ -533,7 +621,6 @@ public class BucketElimination {
 	        
 	        System.out.println(" - remaining factors: " + factors.size());
 
-	        // TODO: figure out cache flushing that's efficient for mini buckets ...
 //	        if (USEEXACT) {
 //		        _context.clearSpecialNodes();
 //		        for (Integer xadd : _alAllFactors)
@@ -544,21 +631,21 @@ public class BucketElimination {
 //	        }
 	        
 	        // Flush caches
-//	        _context.clearSpecialNodes();
-//	        for (Integer xadd : _alAllFactors)
-//	            _context.addSpecialNode(xadd);
-//	        for (Integer f : factors)
-//	            _context.addSpecialNode(f);
-//	        for (ArrayList<Integer> listMessages : messagesByBucket)
-//		        for (Integer message : listMessages)
-//		        	_context.addSpecialNode(message);
-//	        for (ArrayList<Integer> listOriginalFactors : original_factorsByBucket)
-//		        for (Integer originalFactor : listOriginalFactors)
-//		        	_context.addSpecialNode(originalFactor);	
-//	        for (ArrayList<Integer> listProjectedFactors : projected_factorsByBucket)
-//		        for (Integer projected_Factor : listProjectedFactors)
-//		        	_context.addSpecialNode(projected_Factor);	        	        
-//	        _context.flushCaches();
+	        _context.clearSpecialNodes();
+	        for (Integer xadd : _alAllFactors)
+	            _context.addSpecialNode(xadd);
+	        for (Integer f : factors)
+	            _context.addSpecialNode(f);
+	        for (ArrayList<Integer> listMessages : messagesByBucket)
+		        for (Integer message : listMessages)
+		        	_context.addSpecialNode(message);
+	        for (ArrayList<Integer> listOriginalFactors : original_factorsByBucket)
+		        for (Integer originalFactor : listOriginalFactors)
+		        	_context.addSpecialNode(originalFactor);	
+	        for (ArrayList<Integer> listProjectedFactors : projected_factorsByBucket)
+		        for (Integer projected_Factor : listProjectedFactors)
+		        	_context.addSpecialNode(projected_Factor);	        	        
+	        _context.flushCaches();
 	    }
 
 	    // Done variable elimination, have a set of factors just over query vars,
@@ -571,10 +658,9 @@ public class BucketElimination {
 	
 	    HashMap<String,VarSubstitution> assignment=AStarWithMiniBucket(projected_factorsByBucket/**h^p_js**/,original_factorsByBucket/**F_{p_j}s**/,  messagesByBucket/**h_{p_j}s**/,varOrder, decisionsByBucket);
         //System.out.println("Assigment for variables: "+ assignment.toString());
-        System.out.println("Time elapsed: " + timer.GetCurElapsedTime() + " ms");
-	    
-	    
-	    return result_val;
+        long timeElapsed = timer.GetCurElapsedTime();
+	    System.out.println("Time elapsed: " + timeElapsed + " ms");
+	    return timeElapsed;
 	}
 	
 	public Comparator<NodeSearch> BestSearchComparator() {
@@ -707,13 +793,7 @@ public class BucketElimination {
 		int numberBucket=var_order.size() - node.getPartialAssignment().size() - 1;
 		String var=var_order.get(numberBucket);
 		
-		// generate boundary points
-		HashSet<ExprDec> decisionSet = new HashSet<ExprDec>();
-		decisionSet.addAll(decisionSetByBucket.get(numberBucket));
-		if (numberBucket != 0)
-			decisionSet.addAll(decisionSetByBucket.get(numberBucket - 1));
-		HashSet<Double> boundariesFromDecisions = getBoundariesFromDecisions(decisionSet, node.getPartialAssignment(), var);
-		
+
 		//compute newG, newH and newF
 		ArrayList<Integer> result=computeNewGHandF(node,projected_factorsByBucket, original_factorsByBucket, messagesByBucket, numberBucket);
 		Integer newG = result.get(0);
@@ -732,7 +812,15 @@ public class BucketElimination {
 		} 
 		//Continuous variable
 		else {
-//			 
+			
+			// generate boundary points
+			HashSet<ExprDec> decisionSet = new HashSet<ExprDec>();
+			decisionSet.addAll(decisionSetByBucket.get(numberBucket));
+			if (numberBucket != 0)
+				decisionSet.addAll(decisionSetByBucket.get(numberBucket - 1));
+			HashSet<Double> boundariesFromDecisions = getBoundariesFromDecisions(decisionSet, node.getPartialAssignment(), var);
+			
+			
 			HashSet<Double> heuristicBoundaries = _context.getExistNode(newF).collectBoundaries(var);
 			HashSet<Double> allBoundaries = new HashSet<Double>();
 			if (RECOVER_HINGE_PTS)
@@ -742,7 +830,7 @@ public class BucketElimination {
 					allBoundaries.add(val);
 			}
 
-			// add endpoints of the dimension
+			// add endpoints
 			allBoundaries.add(CVAR_LB);
 			allBoundaries.add(CVAR_UB);
 

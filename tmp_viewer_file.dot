@@ -1,0 +1,19 @@
+digraph G {
+	graph [fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", ranksep="2.00"];
+	node [label="\N", fontsize=16];
+	graph [bb="0,0,736,400"];
+	265 [label="((-1 * x20) + (1 * x21))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="472,18", width="2.2778", height="0.5"];
+	288 [label="((1 * x21) + (-1 * x22)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="238,199", width="3.7034", height="0.51069"];
+	_temp_ [label="Parsed factor: f19", fillcolor=gold1, color=black, shape=box, style=filled, pos="596,381", width="1.7778", height="0.5"];
+	279 [label="((-1 * x21) + (1 * x22))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="654,18", width="2.2778", height="0.5"];
+	291 [label="((1 * x20) + (-1 * x21)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="380,381", width="3.7034", height="0.51069"];
+	271 [label="((1 * x20) + (-1 * x21))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="82,18", width="2.2778", height="0.5"];
+	284 [label="((1 * x21) + (-1 * x22)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="523,199", width="3.7034", height="0.51069"];
+	285 [label="((1 * x21) + (-1 * x22))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="264,18", width="2.2778", height="0.5"];
+	288 -> 271 [color=black, style=dashed, pos="e,96.846,36.035 222.76,180.51 194.89,148.53 135.64,80.55 103.62,43.806"];
+	288 -> 285 [color=black, style=solid, pos="e,261.53,36.035 240.54,180.51 245.09,149.2 254.65,83.39 260.05,46.163"];
+	291 -> 288 [color=black, style=dashed, pos="e,251.72,217.39 366.13,362.41 340.93,330.47 287.55,262.81 258.27,225.7"];
+	291 -> 284 [color=black, style=solid, pos="e,509.18,217.39 393.97,362.41 419.45,330.34 473.55,262.24 502.96,225.23"];
+	284 -> 265 [color=black, style=solid, pos="e,476.85,36.035 518.02,180.51 509.06,149.07 490.18,82.825 479.6,45.685"];
+	284 -> 279 [color=black, style=dashed, pos="e,641.53,36.035 535.8,180.51 559.1,148.67 608.54,81.121 635.51,44.271"];
+}
