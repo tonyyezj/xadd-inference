@@ -47,7 +47,7 @@ public class BucketElimination {
     public static boolean TIEBREAK = false;
     public static boolean NAIVEORDER = true; // this is the linear elimination order (sequentially)
     
-    public static int NUM_FACTORS = 20;
+    public static int NUM_FACTORS = 50;
     public double CVAR_LB = -10;
     public double CVAR_UB = 10;
     public static int XADDLIMIT = 1000; // limit on the XADD size for minibucket elimination

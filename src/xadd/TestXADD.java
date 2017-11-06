@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import bucketelim.BucketElimination;
 import bucketelim.VarSubstitution;
 import xadd.LinearXADDMethod.NamedOptimResult;
 import xadd.XADD.*;
@@ -21,7 +22,42 @@ public class TestXADD {
      * @param args .... ..............................................
      */
 
-    public static void main(String[] args) throws Exception {
+	
+	public static void main(String[] args) throws Exception {
+
+        // Elim Example 3: Integrating out x for [z * \delta(x - y)] for XADDs y and z
+        // Note: it is assumed that z contains references to x that will be substituted according to y,
+        // y should *not* contain the variable x
+        //
+        // Here y = xadd_circle(x1,x2,r1,r2), x = k, z = xadd1(k,x1,f)
+		
+		 XADD xadd_context = new XADD();
+		 
+		 // substitute the XADD mud for the variable x2 in reward XADD
+		 int mud = BucketElimination.ParseXADDString(xadd_context, "( [x1 > 4] ( [x1 < 6] ( [0.5 * dx1 + x1] ) ( [dx1 + x1] )  ) ( [dx1 + x1] ) )");
+		 int reward = BucketElimination.ParseXADDString(xadd_context, "( [x2 > 7] ( [x2 < 9] ( [1] ) ( [0] )  ) ( [0] ) )");
+		 xadd_context.getGraph(mud).launchViewer("mud");   
+		 xadd_context.getGraph(reward).launchViewer("reward");
+		 int postsub = xadd_context.reduceProcessXADDLeaf(mud, xadd_context.new DeltaFunctionSubstitution("x2", reward), /* canonical_reorder */
+	                true);
+		 
+		 
+		 xadd_context.getGraph(postsub).launchViewer("postsub");   
+		 int xadd_circle = TestBuild(xadd_context, "./src/xadd/ex/circle.xadd");
+	        
+		int xadd1 = TestBuild(xadd_context, "./src/xadd/ex/test1.xadd");
+		//xadd_context.getGraph(xadd1).launchViewer( "test1 orig");
+        int result = xadd_context.reduceProcessXADDLeaf(xadd_circle, xadd_context.new DeltaFunctionSubstitution("k", xadd1), /* canonical_reorder */
+                true);
+//        xadd_context.getGraph(y).launchViewer("y");
+//        System.out.println(xadd_context.getString(xadd_circle));
+//        System.out.println("-------------\n" + xadd_context.getString(y));
+
+        // Pause
+
+	}
+	
+    public static void main10(String[] args) throws Exception {
     	//testMinOut(args);
 		 
 	        XADD xadd_context = new XADD();
