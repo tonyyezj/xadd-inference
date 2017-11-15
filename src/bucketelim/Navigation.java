@@ -30,28 +30,28 @@ public class Navigation {
     public ArrayList<Integer> _transitionYFactors  = null;
     
     
-    public static int NUM_FACTORS = 10;
+    public static int NUM_FACTORS = 5;
     public static int XADDLIMIT = 1; // limit on the XADD size for minibucket elimination
     
     public static int NUM_VAR_IN_FACTOR = 2;
     public static boolean  DISPLAY_RAW_FACTORS = false; 
     public static boolean SHOW_GRAPHS= false;
 
-    public double CVAR_LB = -1;
-    public double CVAR_UB = 1;
+    public double CVAR_LB = -2;
+    public double CVAR_UB = 2;
 	
     
 	public static void main(String[] args) throws Exception {
 
 		String reward = "( [x1 > 7] ( [x1 < 9] ( [y1 > 7] ( [y1 < 9] ( [1] ) ( [0] ) ) ( [0] ) )  ( [0] )  ) ( [0] ) )";
-		String transitionX = "( [x1 > 4] ( [x1 < 6] ( [0.5 * dx1 + x1] ) ( [dx1 + x1] )  ) ( [dx1 + x1] ) )";
-		String transitionY = "( [y1 > 4] ( [y1 < 6] ( [0.5 * dy1 + y1] ) ( [dy1 + y1] )  ) ( [dy1 + y1] ) )";
-		String windX = "( [x1 > 0] ( [x1 < 10] ( [-0.5] ) ( [0] )  ) ( [0] ) )";
-		String windY = "( [y1 > 0] ( [y1 < 10] ( [0] ) ( [0] )  ) ( [0] ) )";
+		String transitionX = "( [x1 > 4] ( [x1 < 6] ( [y1 > 4] ( [y1 < 6] ( [0.5 * dx1 + x1] ) ( [dx1 + x1] ) ) ( [dx1 + x1] ) )  ( [dx1 + x1] )  ) ( [dx1 + x1] ) )";
+		String transitionY = "( [x1 > 4] ( [x1 < 6] ( [y1 > 4] ( [y1 < 6] ( [0.5 * dy1 + y1] ) ( [dy1 + y1] ) ) ( [dy1 + y1] ) )  ( [dy1 + y1] )  ) ( [dy1 + y1] ) )";
+		String windX = "( [x1 > 0] ( [x1 < 10] ( [y1 > 0] ( [y1 < 5] ( [-1] ) ( [0] ) ) ( [0] ) )  ( [0] )  ) ( [0] ) )";
+		String windY = "( [x1 > 0] ( [x1 < 10] ( [y1 > 0] ( [y1 < 5] ( [0] ) ( [0] ) ) ( [0] ) )  ( [0] )  ) ( [0] ) )";
 		ArrayList<String> listTransitionX = buildXADDStrings(transitionX);
 		ArrayList<String> listTransitionY = buildXADDStrings(transitionY);
 		ArrayList<String> listwindX = buildXADDStrings(windX);
-		ArrayList<String> listwindY = buildXADDStrings(windY);
+		ArrayList<String> listwindY = buildXADDStrings(windY);	
 		ArrayList<String> listReward = buildXADDStrings(reward);
 		Navigation be = buildBEProblem(listReward);
 		be.BuildTransitionFactors(listTransitionX, listTransitionY, listwindX, listwindY);

@@ -25,7 +25,7 @@ import xadd.ExprLib.*;
 
 public class STPPD {
 
-	public final static boolean SHOW_GRAPHS = true;
+	public final static boolean SHOW_GRAPHS = false;
 	public final static boolean SHOW_PLOTS  = false;
 	
 	public final static boolean DISPLAY = true;
@@ -647,7 +647,16 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
     }
     
     public void postStartAfterGapCons(String j1, String j2, int gap) {
-    	int cons = ParseXADDString(_context, "([" + j2 + " >=" + j1 + " + " + gap + "] ([0]) ([Infinity]))");
+    	int cons = ParseXADDString(_context, "([" + j2 + " >=" + j1 + " + " + gap + "] ([0]) ([INFINITY]))");
+    	cons = _context.reduceLP(cons);
+    	_hmFactor2Name.put(cons, "start after cons:\n" + j2 + " >= " + j1 + " + " + gap);
+        _alConsFactors.add(cons);
+    	_alAllFactors.add(cons);
+        //_context.getGraph(cons).launchViewer("Start-after Gap Constraint");
+    }
+    
+    public void postStartAfterGapConsPenalize(String j1, String j2, int gap) {
+    	int cons = ParseXADDString(_context, "([" + j2 + " >=" + j1 + " + " + gap + "] ([-"+j1+"]) (0))");
     	cons = _context.reduceLP(cons);
     	_hmFactor2Name.put(cons, "start after cons:\n" + j2 + " >= " + j1 + " + " + gap);
         _alConsFactors.add(cons);
@@ -667,6 +676,25 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
     	_hmFactor2Name.put(dcons, "disj cons:\n" + j1 + " in [ " + lb1 + ", " +  ub1 + " ] OR [" + j1 + " in [ " + lb2 + ", " +  ub2 + " ]");
     	_alConsFactors.add(dcons);
     	_alAllFactors.add(dcons);
+        //_context.getGraph(dcons).launchViewer("Disjunctive Constraint");
+    }
+    
+    public void postDisjConsPenalize(int index) {
+    	//String j1 = "t" + index;
+    	//int cons1 = ParseXADDString(_context, "([" + j1 + " >= " + lb1 + "] ([" + j1 + " <= " + ub1 + "] ([" + ("t" + index) + " - "  + ("t" + (index-1)) + "]) ([" + ("t" + (index+1) ) + " - "  + ("t" + (index-1)) + "])) ([" + ("t" + (index+1) ) + " - "  + ("t" + (index-1)) + "]))");
+    	//int cons2 = ParseXADDString(_context, "([" + j1 + " >= " + lb2 + "] ([" + j1 + " <= " + ub2 + "] ([" + ("t" + (index+1) ) + " - "  + ("t" + (index)) + "]) ([0])) ([0]))");
+    	//int bindex = _context.getVarIndex(_context.new BoolDec("b" + j1), true);
+    	//int dcons = _context.getINodeCanon(bindex, cons1, cons2);
+       //It is not necessary these boolean variables
+    	//dcons = minOutVar(dcons, "b" + j1);    	  
+    	
+    	           
+    	
+    	int cons1 = ParseXADDString(_context, "( [" + "t" + (index-1) + " + 10 < " + "t" + (index) + "] ( [" + "t" + (index) + " + 5 < " + "t" + (index+1) + "] ( [" + "t" + (index+1) + " - " + "t" + (index) + "] ) ( [" + "t" + (index) + " - " + "t" + (index-1) + "] )) ( [" + "t" + (index) + " + 5 < " + "t" + (index+1) + "] ( [" + "t" + (index+1) + " - " + "t" + (index-1) + "] ) ( [" + "t" + (index+1) + " - " + "t" + (index) + "] ) ) )");
+    	cons1 = _context.reduceLP(cons1);
+    	_hmFactor2Name.put(cons1, "gap cons penalty" + index);
+    	_alConsFactors.add(cons1);
+    	_alAllFactors.add(cons1);
         //_context.getGraph(dcons).launchViewer("Disjunctive Constraint");
     }
     
@@ -762,7 +790,8 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
     			try { System.in.read(); } catch (Exception e) { }
     			System.exit(1);
     		}
-    		return minOutCVar(obj, var, -Double.MAX_VALUE, Double.MAX_VALUE);
+    		//return minOutCVar(obj, var, -Double.MAX_VALUE, Double.MAX_VALUE);
+    		return minOutCVar(obj, var, 0, Double.MAX_VALUE);
     	}
     }
     
@@ -859,7 +888,7 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
     	
     	
     	//STPPD stn = BuildSimpleSTPPD(false /* true = additive obj, false = makespan obj */);
-    	STPPD stn = BuildLinearSTPPD(true /* true = additive obj, false = makespan obj */, 2 /* size */);
+    	STPPD stn = BuildLinearSTPPD(true /* true = additive obj, false = makespan obj */, 7 /* size */);
  
 
      
@@ -869,8 +898,8 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
     	if (DISPLAY) stn.getConstraintGraph(stn._alAllFactors).launchViewer("Constraint factor graph");
 
     	//stn.testReduceLP();
-        //stn.solveBucketElim();
-        stn.solveMiniBucketElim(1/*max variables*/);
+        stn.solveBucketElim();
+        //stn.solveMiniBucketElim(1/*max variables*/);
         //stn.solveMonolithic();
     }
 
@@ -914,14 +943,18 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
 			stn.postMakespanObjective(jobs);
 		    
 		for (int j = 1; j <= size; j++) {
-			stn.postDisjCons("t" + j, j*10, (j+1)*10, (j+2)*10, (j+3)*10);
-			stn.postPrefCons("t" + j, (j+1)*10, 1.0, 0.0);
+			//stn.postDisjCons("t" + j, j*10, (j+1)*10, (j+2)*10, (j+3)*10);
+
+			if (j != 1 && j != size) {
+				stn.postDisjConsPenalize(j);
+			}
+			//stn.postPrefCons("t" + j, (j+1)*10, 1.0, 0.0);
 		}
 
-		// Loop until 1 before end
-		for (int j = 1; j < size; j++) {
-	        stn.postStartAfterGapCons("t" + j, "t" + (j+1), 10);
-		}
+//		// Loop until 1 before end
+//		for (int j = 1; j < size; j++) {
+//	        stn.postStartAfterGapCons("t" + j, "t" + (j+1), 10);
+//		}
 		
 		return stn;
     }
