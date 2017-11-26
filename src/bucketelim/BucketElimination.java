@@ -47,7 +47,7 @@ public class BucketElimination {
     public static boolean TIEBREAK = false;
     public static boolean NAIVEORDER = true; // this is the linear elimination order (sequentially)
     
-    public static int NUM_FACTORS = 50;
+    public static int NUM_FACTORS = 1;
     public double CVAR_LB = -10;
     public double CVAR_UB = 10;
     public static int XADDLIMIT = 1000; // limit on the XADD size for minibucket elimination
@@ -81,7 +81,7 @@ public class BucketElimination {
 		// max - min
 		//BucketElimination be = buildBEProblem("( [x1 < x2] ( [x2 - x1] ) ( [x1 - x2] ) )");
 		
-		//String twString = increaseTW("( [x1 < x2] ( [x2 - x1] ) ( [x1 - x2] ) )", treeWidth);
+		//String twString = incre	seTW("( [x1 < x2] ( [x2 - x1] ) ( [x1 - x2] ) )", treeWidth);
 		
 		//BucketElimination be = buildBEProblem(new String[]{"( [x + y > 5] ( [5 - z] ) ( [x + y - z] ) )"
 		//		, "( [y + z > 7] ( [7] ) ( [y + z] ) )"}
@@ -158,8 +158,8 @@ public class BucketElimination {
 	        be._hmFactor2Name.put(xadd, "f"+i);
 	        be._alAllFactors.add(xadd);			
 	        
-	        if (DISPLAY_RAW_FACTORS) {
-	        	be._context.showGraph(xadd, "Parsed factor: " + "f"+i);  
+	        if (i == 0) {
+	        	be._context.showGraph(xadd,"XOR");  
 	        }
 		}
         return be;

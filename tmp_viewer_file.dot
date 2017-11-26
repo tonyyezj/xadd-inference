@@ -1,24 +1,19 @@
-graph G {
-	graph [overlap=false, fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", rankdir=LR, ranksep="2.00"];
+digraph G {
+	graph [fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", ranksep="2.00"];
 	node [label="\N", fontsize=16];
-	edge [fontsize=16];
-	graph [bb="0,0,154.51,229.98"];
-	t4 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="42.099,130.79", width="0.75", height="0.51069"];
-	t5 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="89,83.528", width="0.75", height="0.51069"];
-	t6 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="27,63.822", width="0.75", height="0.51069"];
-	t7 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="76.591,18.385", width="0.75", height="0.51069"];
-	t1 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="127.51,211.6", width="0.75", height="0.51069"];
-	t2 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="61.968,196.5", width="0.75", height="0.51069"];
-	t3 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="106.21,148.8", width="0.75", height="0.51069"];
-	t4 -- t5 [pos="57.456,115.32 62.692,110.04 68.542,104.14 73.768,98.877"];
-	t4 -- t6 [pos="37.973,112.49 35.843,103.04 33.251,91.546 31.121,82.1"];
-	t5 -- t6 [pos="64.496,75.74 60.299,74.406 55.935,73.019 51.732,71.683"];
-	t5 -- t7 [pos="85.477,65.035 83.786,56.158 81.766,45.553 80.079,36.699"];
-	t6 -- t7 [pos="43.238,48.944 48.774,43.871 54.96,38.204 60.486,33.141"];
-	t1 -- t2 [pos="101.6,205.63 97.025,204.58 92.257,203.48 87.683,202.42"];
-	t1 -- t3 [pos="121.35,193.43 118.54,185.17 115.24,175.42 112.43,167.14"];
-	t2 -- t4 [pos="56.433,178.2 53.677,169.08 50.355,158.1 47.604,149"];
-	t2 -- t3 [pos="76.453,180.88 81.291,175.66 86.684,169.85 91.536,164.62"];
-	t3 -- t4 [pos="81.237,141.78 76.596,140.48 71.747,139.12 67.105,137.81"];
-	t3 -- t5 [pos="101.41,130.62 99.066,121.71 96.246,111.01 93.886,102.07"];
+	graph [bb="0,0,694,400"];
+	_temp_ [label=XOR, fillcolor=gold1, color=black, shape=box, style=filled, pos="179,381", width="0.75", height="0.5"];
+	25 [label="((1 * x1) + (-1 * x2)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="346,381", width="3.3935", height="0.51069"];
+	15 [label="((1 * x2) + (-1 * x3)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="215,199", width="3.3935", height="0.51069"];
+	16 [label="((1 * x2) + (-1 * x3))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="454,18", width="2.0556", height="0.5"];
+	17 [label="((1 * x1) + (-1 * x2))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="620,18", width="2.0556", height="0.5"];
+	8 [label="((-1 * x1) + (1 * x2))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="74,18", width="2.0556", height="0.5"];
+	20 [label="((1 * x2) + (-1 * x3)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="478,199", width="3.3935", height="0.51069"];
+	10 [label="((-1 * x2) + (1 * x3))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="240,18", width="2.0556", height="0.5"];
+	25 -> 15 [color=black, style=solid, pos="e,227.66,217.39 333.2,362.41 309.96,330.47 260.72,262.81 233.7,225.7"];
+	25 -> 20 [color=black, style=dashed, pos="e,465.24,217.39 358.9,362.41 382.32,330.47 431.94,262.81 459.16,225.7"];
+	15 -> 8 [color=black, style=solid, pos="e,87.418,36.035 201.22,180.51 176.14,148.67 122.93,81.121 93.906,44.271"];
+	15 -> 10 [color=black, style=dashed, pos="e,237.62,36.035 217.44,180.51 221.82,149.2 231.01,83.39 236.21,46.163"];
+	20 -> 16 [color=black, style=solid, pos="e,456.28,36.035 475.66,180.51 471.46,149.2 462.63,83.39 457.64,46.163"];
+	20 -> 17 [color=black, style=dashed, pos="e,606.49,36.035 491.87,180.51 517.14,148.67 570.72,81.121 599.95,44.271"];
 }

@@ -664,6 +664,18 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
         //_context.getGraph(cons).launchViewer("Start-after Gap Constraint");
     }
     
+    public void postQuadPref(String j1, String j2, int gap) {
+    	//tj <= (j+1) * 10 then pref = t[j] - 10 else pref = 10 - t[j]
+    	int cons = ParseXADDString(_context, "([" + j1 + " <=" + gap + "] (["+j1+"*" + j1 + " - 20*" + j1 + " + 100]) ([100 - 20*" + j1 + " + "+j1+ "*" + j1 + "]))");
+    	//tj <= (j+1) * 10 then pref = t[j] - 10 else pref = 10 - t[j-1]
+    	//int cons = ParseXADDString(_context, "([" + j1 + " <=" + gap + "] (["+j1+"*" + j1 + " - 20*" + j1 + " + 100]) ([100 - 20*" + j2 + " + "+j2+ "*" + j2 + "]))");
+    	cons = _context.reduceLP(cons);
+    	_hmFactor2Name.put(cons, "QuadPreference");
+        _alConsFactors.add(cons);
+    	_alAllFactors.add(cons);
+        //_context.getGraph(cons).launchViewer("Start-after Gap Constraint");
+    }
+    
     public void postDisjCons(String j1, int lb1, int ub1, int lb2, int ub2) {
     	int cons1 = ParseXADDString(_context, "([" + j1 + " >= " + lb1 + "] ([" + j1 + " <= " + ub1 + "] ([0]) ([Infinity])) ([Infinity]))");
     	int cons2 = ParseXADDString(_context, "([" + j1 + " >= " + lb2 + "] ([" + j1 + " <= " + ub2 + "] ([0]) ([Infinity])) ([Infinity]))");
@@ -859,41 +871,9 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
     
     public static void main(String[] args) throws Exception {
  
-    	  /**  STPPD stn2= new STPPD();
-
-            stn2.postPrefCons("t" + 1, (2)*10, 1.0, 0.0);
-
-    		stn2.postStartAfterGapCons("t" + 1, "t" + 2, 10);
-        	
-        	            
-                       
-            stn2._context.getGraph(stn2._alAllFactors.get(0)).launchViewer("Test ");
-            stn2._context.getGraph(stn2._alAllFactors.get(1)).launchViewer("Test ");
-            
-            
-            Integer newF3 = stn2._context.applyInt(stn2._alAllFactors.get(0),stn2._alAllFactors.get(1),  XADD.SUM);
-            stn2._context.getGraph(newF3).launchViewer("Test ");
-            
-            HashMap<String, ArithExpr> subsCont = new HashMap<String, ArithExpr>();
-			subsCont.put("t2", new DoubleExpr(20.0) );
-
-        	newF3=stn2._context.substitute(newF3,subsCont);
-        	
-        	stn2._context.getGraph(newF3).launchViewer("Test ");
-
-        	newF3=stn2._context.reduceLP(newF3);
-            stn2._context.getGraph(newF3).launchViewer("Test ");
-**/
-
-    	
-    	
-    	//STPPD stn = BuildSimpleSTPPD(false /* true = additive obj, false = makespan obj */);
-    	STPPD stn = BuildLinearSTPPD(true /* true = additive obj, false = makespan obj */, 7 /* size */);
- 
-
-     
     
-    	
+    	//STPPD stn = BuildSimpleSTPPD(false /* true = additive obj, false = makespan obj */);
+    	STPPD stn = BuildLinearSTPPD(true /* true = additive obj, false = makespan obj */, 30 /* size */);
     	
     	if (DISPLAY) stn.getConstraintGraph(stn._alAllFactors).launchViewer("Constraint factor graph");
 
@@ -903,6 +883,41 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
         //stn.solveMonolithic();
     }
 
+    public static STPPD BuildLinearSTPPD(boolean additive_obj, int size) throws Exception {
+    	
+		STPPD stn = new STPPD();
+		
+		List<String> jobs = new ArrayList<String>();
+		for (int j = 1; j <= size; j++)
+			jobs.add("t" + j);
+    			        
+		if (additive_obj)
+			stn.postAdditiveObjective(jobs);
+		else
+			stn.postMakespanObjective(jobs);
+		    
+		for (int j = 1; j <= size; j++) {
+			stn.postDisjCons("t" + j, j*10, (j+1)*10, (j+2)*10, (j+3)*10);
+
+//			if (j != 1 && j != size) {
+//				stn.postDisjConsPenalize(j);
+//			}
+			//stn.postPrefCons("t" + j, (j+1)*10, 1.0, 0.0);
+			
+			//if (j != 1) {
+				stn.postQuadPref("t" + j, "t" + (j-1), (j+1)*10);
+			//}
+			
+		}
+
+		// Loop until 1 before end
+		for (int j = 1; j < size; j++) {
+	        stn.postStartAfterGapCons("t" + j, "t" + (j+1), 10);
+		}
+		
+		return stn;
+    }
+    
     public static STPPD BuildSimpleSTPPD(boolean additive_obj) throws Exception {
     	
     	STPPD stn = new STPPD();
@@ -927,35 +942,5 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
         stn.postPrefCons("t1", 20, -20.0, 0.0);
         
         return stn;
-    }
-
-    public static STPPD BuildLinearSTPPD(boolean additive_obj, int size) throws Exception {
-    	
-		STPPD stn = new STPPD();
-		
-		List<String> jobs = new ArrayList<String>();
-		for (int j = 1; j <= size; j++)
-			jobs.add("t" + j);
-    			        
-		if (additive_obj)
-			stn.postAdditiveObjective(jobs);
-		else
-			stn.postMakespanObjective(jobs);
-		    
-		for (int j = 1; j <= size; j++) {
-			//stn.postDisjCons("t" + j, j*10, (j+1)*10, (j+2)*10, (j+3)*10);
-
-			if (j != 1 && j != size) {
-				stn.postDisjConsPenalize(j);
-			}
-			//stn.postPrefCons("t" + j, (j+1)*10, 1.0, 0.0);
-		}
-
-//		// Loop until 1 before end
-//		for (int j = 1; j < size; j++) {
-//	        stn.postStartAfterGapCons("t" + j, "t" + (j+1), 10);
-//		}
-		
-		return stn;
     }
 }
