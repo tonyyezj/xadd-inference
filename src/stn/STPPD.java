@@ -2,6 +2,10 @@ package stn;
 
 import graph.Graph;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -11,6 +15,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Map.Entry;
+
+import bucketelim.BucketElimination;
+
 import java.util.Set;
 
 import logic.kb.fol.FOPC.Node;
@@ -28,7 +35,7 @@ public class STPPD {
 	public final static boolean SHOW_GRAPHS = false;
 	public final static boolean SHOW_PLOTS  = false;
 	
-	public final static boolean DISPLAY = true;
+	public final static boolean DISPLAY = false;
 	
 	public XADD _context = null;
 	public HashMap<Integer,String> _hmFactor2Name = null;
@@ -94,7 +101,7 @@ public class STPPD {
         return result_val;
     }
         
-    public double solveBucketElim() {
+    public long solveBucketElim() {
     	
     	Timer timer = new Timer();
     	ArrayList<String> var_order = getTWMinVarOrder();
@@ -134,10 +141,11 @@ public class STPPD {
 	    // need to compute normalizer
 	    Integer result = addFactors(factors);
 	    double result_val = ((DoubleExpr)((XADDTNode)_context.getNode(result))._expr)._dConstVal;
-	    System.out.println("solveBucketElim Done (" + timer.GetCurElapsedTime() + " ms): result value " + result_val + /*" [size: " + _context.getNodeCount(result) + ", vars: " + _context.collectVars(result) + "]"*/ "\n");
+	    long runtime = timer.GetCurElapsedTime() ;
+	    System.out.println("solveBucketElim Done (" + runtime + " ms): result value " + result_val + /*" [size: " + _context.getNodeCount(result) + ", vars: " + _context.collectVars(result) + "]"*/ "\n");
 	    //_context.getGraph(result).launchViewer("Final result " + result);
 	
-	    return result_val;
+	    return runtime;
 	}
 /**
  * Sum factors that contain variable and marginalize out variable
@@ -664,9 +672,10 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
         //_context.getGraph(cons).launchViewer("Start-after Gap Constraint");
     }
     
-    public void postQuadPref(String j1, String j2, int gap) {
+    public void postQuadPref(String j1, String j2, int gap, int n) {
+    	int value = n*10;
     	//tj <= (j+1) * 10 then pref = t[j] - 10 else pref = 10 - t[j]
-    	int cons = ParseXADDString(_context, "([" + j1 + " <=" + gap + "] (["+j1+"*" + j1 + " - 20*" + j1 + " + 100]) ([100 - 20*" + j1 + " + "+j1+ "*" + j1 + "]))");
+    	int cons = ParseXADDString(_context, "([" + j1 + " <=" + gap + "] (["+j1+"*" + j1 + "]) ([" + value + " * " + value + " - 2 * " + value + " * " + j1 + " + " + j1 + " * " + j1 + "]))");
     	//tj <= (j+1) * 10 then pref = t[j] - 10 else pref = 10 - t[j-1]
     	//int cons = ParseXADDString(_context, "([" + j1 + " <=" + gap + "] (["+j1+"*" + j1 + " - 20*" + j1 + " + 100]) ([100 - 20*" + j2 + " + "+j2+ "*" + j2 + "]))");
     	cons = _context.reduceLP(cons);
@@ -873,14 +882,28 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
  
     
     	//STPPD stn = BuildSimpleSTPPD(false /* true = additive obj, false = makespan obj */);
-    	STPPD stn = BuildLinearSTPPD(true /* true = additive obj, false = makespan obj */, 30 /* size */);
-    	
-    	if (DISPLAY) stn.getConstraintGraph(stn._alAllFactors).launchViewer("Constraint factor graph");
 
-    	//stn.testReduceLP();
-        stn.solveBucketElim();
-        //stn.solveMiniBucketElim(1/*max variables*/);
-        //stn.solveMonolithic();
+        
+    	for (int i = 1; i <= 100; i++) {
+        	STPPD stn = BuildLinearSTPPD(true /* true = additive obj, false = makespan obj */, i /* size */);
+        	
+        	if (false) stn.getConstraintGraph(stn._alAllFactors).launchViewer("Constraint factor graph");
+
+        	//stn.testReduceLP();
+        	long runtime = stn.solveBucketElim();
+            //stn.solveMiniBucketElim(1/*max variables*/);
+            //stn.solveMonolithic();
+
+		try(FileWriter fw = new FileWriter("tpn.txt", true);
+			    BufferedWriter bw = new BufferedWriter(fw);
+			    PrintWriter out = new PrintWriter(bw))
+			{
+			    out.println(String.valueOf(runtime));
+			    //more code
+			} catch (IOException e) {
+			    //exception handling left as an exercise for the reader
+			}
+    	}
     }
 
     public static STPPD BuildLinearSTPPD(boolean additive_obj, int size) throws Exception {
@@ -905,7 +928,7 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
 			//stn.postPrefCons("t" + j, (j+1)*10, 1.0, 0.0);
 			
 			//if (j != 1) {
-				stn.postQuadPref("t" + j, "t" + (j-1), (j+1)*10);
+				stn.postQuadPref("t" + j, "t" + (j-1), (j+1)*10, size);
 			//}
 			
 		}

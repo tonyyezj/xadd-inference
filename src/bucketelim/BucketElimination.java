@@ -1,7 +1,10 @@
 package bucketelim;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,14 +56,33 @@ public class BucketElimination {
     public static int XADDLIMIT = 1000; // limit on the XADD size for minibucket elimination
     
     public static boolean RECOVER_HINGE_PTS = false; // non-recursive hinge point recovery for minibucket elimination
-    public static boolean USEEXACT = false; // use the exact bucket elimination algorithm (this only outputs optimal value)
+    public static boolean USEEXACT = true; // use the exact bucket elimination algorithm (this only outputs optimal value)
     										// if optimal assignments required, use the minibuckets one and set XADDLIMIT to high
     public static boolean ONEPASS = true; // true = will choose the best instantiation for the current var, based on the current heuristic val.
 
     public static int NUM_VAR_IN_FACTOR = 30;
     public static int treeWidth = 1;
+    
+    public static void main(String[] args) throws Exception {
+    	for (int i = 0; i < 50; i++) {
+    	String twString = increaseTW("( [x1 > x2] ( [x2 > x3] ( [x2 - x1] ) ( [x3 - x2] )) ( [x2 > x3] ( [x2 - x3] ) ( [x1 - x2] ) ) )", i);
+		ArrayList<String> list = buildXADDStrings(twString);
+		BucketElimination be = buildBEProblem(list);
+		long runtime = be.solveBucketElim();
+		try(FileWriter fw = new FileWriter("results.txt", true);
+			    BufferedWriter bw = new BufferedWriter(fw);
+			    PrintWriter out = new PrintWriter(bw))
+			{
+			    out.println(String.valueOf(runtime));
+			    //more code
+			} catch (IOException e) {
+			    //exception handling left as an exercise for the reader
+			}
+    	}
+		
+    }
 
-	public static void main(String[] args) throws Exception {
+	public static void main2(String[] args) throws Exception {
 
 		// max(x_i, x_{i+1})
 		//for (int treeWidth = 1; treeWidth <= 7; treeWidth++) {
@@ -158,7 +180,7 @@ public class BucketElimination {
 	        be._hmFactor2Name.put(xadd, "f"+i);
 	        be._alAllFactors.add(xadd);			
 	        
-	        if (i == 0) {
+	        if (false) {
 	        	be._context.showGraph(xadd,"XOR");  
 	        }
 		}
@@ -354,7 +376,7 @@ public class BucketElimination {
  
     
     @SuppressWarnings("unchecked")
-   	public double solveBucketElim() {
+   	public long solveBucketElim() {
     	
     	Timer timer = new Timer();
     	List<String> var_order = getTWMinVarOrder();
@@ -396,10 +418,11 @@ public class BucketElimination {
 	    // need to compute normalizer
 	    Integer result = combineFactors(factors);
 	    double result_val = ((DoubleExpr)((XADDTNode)_context.getNode(result))._expr)._dConstVal;
-	    System.out.println("solveBucketElim Done (" + timer.GetCurElapsedTime() + " ms): result value " + result_val + /*" [size: " + _context.getNodeCount(result) + ", vars: " + _context.collectVars(result) + "]"*/ "\n");
+	    long value = timer.GetCurElapsedTime();
+	    System.out.println("solveBucketElim Done (" + value + " ms): result value " + result_val + /*" [size: " + _context.getNodeCount(result) + ", vars: " + _context.collectVars(result) + "]"*/ "\n");
 	    //_context.getGraph(result).launchViewer("Final result " + result);
 	
-	    return result_val;
+	    return value;
 	}
     
 

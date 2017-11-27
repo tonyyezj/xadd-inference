@@ -1,19 +1,13 @@
-digraph G {
-	graph [fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", ranksep="2.00"];
+graph G {
+	graph [overlap=false, fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", rankdir=LR, ranksep="2.00"];
 	node [label="\N", fontsize=16];
-	graph [bb="0,0,694,400"];
-	_temp_ [label=XOR, fillcolor=gold1, color=black, shape=box, style=filled, pos="179,381", width="0.75", height="0.5"];
-	25 [label="((1 * x1) + (-1 * x2)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="346,381", width="3.3935", height="0.51069"];
-	15 [label="((1 * x2) + (-1 * x3)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="215,199", width="3.3935", height="0.51069"];
-	16 [label="((1 * x2) + (-1 * x3))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="454,18", width="2.0556", height="0.5"];
-	17 [label="((1 * x1) + (-1 * x2))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="620,18", width="2.0556", height="0.5"];
-	8 [label="((-1 * x1) + (1 * x2))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="74,18", width="2.0556", height="0.5"];
-	20 [label="((1 * x2) + (-1 * x3)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="478,199", width="3.3935", height="0.51069"];
-	10 [label="((-1 * x2) + (1 * x3))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="240,18", width="2.0556", height="0.5"];
-	25 -> 15 [color=black, style=solid, pos="e,227.66,217.39 333.2,362.41 309.96,330.47 260.72,262.81 233.7,225.7"];
-	25 -> 20 [color=black, style=dashed, pos="e,465.24,217.39 358.9,362.41 382.32,330.47 431.94,262.81 459.16,225.7"];
-	15 -> 8 [color=black, style=solid, pos="e,87.418,36.035 201.22,180.51 176.14,148.67 122.93,81.121 93.906,44.271"];
-	15 -> 10 [color=black, style=dashed, pos="e,237.62,36.035 217.44,180.51 221.82,149.2 231.01,83.39 236.21,46.163"];
-	20 -> 16 [color=black, style=solid, pos="e,456.28,36.035 475.66,180.51 471.46,149.2 462.63,83.39 457.64,46.163"];
-	20 -> 17 [color=black, style=dashed, pos="e,606.49,36.035 491.87,180.51 517.14,148.67 570.72,81.121 599.95,44.271"];
+	edge [fontsize=16];
+	graph [bb="0,0,131.31,181.67"];
+	bt2 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="27,18.385", width="0.75", height="0.51069"];
+	t1 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="77.01,115.47", width="0.75", height="0.51069"];
+	t2 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="59.27,63.154", width="0.75", height="0.51069"];
+	bt1 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="104.31,163.29", width="0.75", height="0.51069"];
+	bt2 -- t2 [pos="39.016,35.055 41.74,38.834 44.632,42.846 47.351,46.619"];
+	t1 -- t2 [pos="70.905,97.468 69.141,92.266 67.215,86.586 65.447,81.371"];
+	bt1 -- t1 [pos="94.455,146.02 92.012,141.74 89.391,137.16 86.944,132.87"];
 }
