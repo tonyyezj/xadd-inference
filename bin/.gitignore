@@ -7,6 +7,9 @@
 /ml/
 /prefs/
 /sve/
+/generator/
+/plot/
+/stn/
 /svexaddnew/
 /tskill/
 /util/
@@ -14,6 +17,3 @@
 /xaddorig/
 /CplexRunner.class
 /bucketelim/
-/generator/
-/plot/
-/stn/

@@ -883,27 +883,35 @@ private int computeH(int hMinus1, ArrayList<Integer> HFactorsInBucket, ArrayList
     
     	//STPPD stn = BuildSimpleSTPPD(false /* true = additive obj, false = makespan obj */);
 
-        
-    	for (int i = 1; i <= 100; i++) {
-        	STPPD stn = BuildLinearSTPPD(true /* true = additive obj, false = makespan obj */, i /* size */);
-        	
-        	if (false) stn.getConstraintGraph(stn._alAllFactors).launchViewer("Constraint factor graph");
-
-        	//stn.testReduceLP();
-        	long runtime = stn.solveBucketElim();
-            //stn.solveMiniBucketElim(1/*max variables*/);
-            //stn.solveMonolithic();
-
-		try(FileWriter fw = new FileWriter("tpn.txt", true);
-			    BufferedWriter bw = new BufferedWriter(fw);
-			    PrintWriter out = new PrintWriter(bw))
-			{
-			    out.println(String.valueOf(runtime));
-			    //more code
-			} catch (IOException e) {
-			    //exception handling left as an exercise for the reader
-			}
-    	}
+    	STPPD stn = BuildLinearSTPPD(true /* true = additive obj, false = makespan obj */, 20 /* size */);
+    	stn.solveBucketElim();
+    	
+//    	
+//    	for (int i = 1; i <= 100; i++) {
+//        	STPPD stn = BuildLinearSTPPD(true /* true = additive obj, false = makespan obj */, i /* size */);
+//        	
+//        	if (false) stn.getConstraintGraph(stn._alAllFactors).launchViewer("Constraint factor graph");
+//
+//        	//stn.testReduceLP();
+//        	long runtime = stn.solveBucketElim();
+//            //stn.solveMiniBucketElim(1/*max variables*/);
+//            //stn.solveMonolithic();
+//
+//		try(FileWriter fw = new FileWriter("tpn.txt", true);
+//			    BufferedWriter bw = new BufferedWriter(fw);
+//			    PrintWriter out = new PrintWriter(bw))
+//			{
+//			    out.println(String.valueOf(runtime));
+//			    //more code
+//			} catch (IOException e) {
+//			    //exception handling left as an exercise for the reader
+//			}
+//		
+//    	}
+//    	
+    	
+   
+    
     }
 
     public static STPPD BuildLinearSTPPD(boolean additive_obj, int size) throws Exception {

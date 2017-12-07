@@ -64,8 +64,9 @@ public class BucketElimination {
     public static int treeWidth = 1;
     
     public static void main(String[] args) throws Exception {
-    	for (int i = 0; i < 50; i++) {
-    	String twString = increaseTW("( [x1 > x2] ( [x2 > x3] ( [x2 - x1] ) ( [x3 - x2] )) ( [x2 > x3] ( [x2 - x3] ) ( [x1 - x2] ) ) )", i);
+    	for (int i = 1; i <= 100; i++) {
+    	NUM_FACTORS = i;
+    	String twString = increaseTW("( [x1 > x2] ( [x2 > x3] ( [x2 - x1] ) ( [x3 - x2] )) ( [x2 > x3] ( [x2 - x3] ) ( [x1 - x2] ) ) )", 1);
 		ArrayList<String> list = buildXADDStrings(twString);
 		BucketElimination be = buildBEProblem(list);
 		long runtime = be.solveBucketElim();

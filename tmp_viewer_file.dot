@@ -1,13 +1,10 @@
-graph G {
-	graph [overlap=false, fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", rankdir=LR, ranksep="2.00"];
+digraph G {
+	graph [fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", ranksep="2.00"];
 	node [label="\N", fontsize=16];
-	edge [fontsize=16];
-	graph [bb="0,0,131.31,181.67"];
-	bt2 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="27,18.385", width="0.75", height="0.51069"];
-	t1 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="77.01,115.47", width="0.75", height="0.51069"];
-	t2 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="59.27,63.154", width="0.75", height="0.51069"];
-	bt1 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="104.31,163.29", width="0.75", height="0.51069"];
-	bt2 -- t2 [pos="39.016,35.055 41.74,38.834 44.632,42.846 47.351,46.619"];
-	t1 -- t2 [pos="70.905,97.468 69.141,92.266 67.215,86.586 65.447,81.371"];
-	bt1 -- t1 [pos="94.455,146.02 92.012,141.74 89.391,137.16 86.944,132.87"];
+	graph [bb="0,0,537,218"];
+	611 [label="(1 + (-0.13266479 * x2)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="267,199", width="3.9462", height="0.51069"];
+	457 [label="(138.22964627 + (0.09304717 * x2))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="128,18", width="3.5625", height="0.5"];
+	557 [label="(140.91675757 + (-0.26343789 * x2))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="406,18", width="3.6458", height="0.5"];
+	611 -> 457 [color=black, style=dashed, pos="e,141.23,36.035 253.42,180.51 228.69,148.67 176.24,81.121 147.62,44.271"];
+	611 -> 557 [color=black, style=solid, pos="e,392.77,36.035 280.58,180.51 305.31,148.67 357.76,81.121 386.38,44.271"];
 }
