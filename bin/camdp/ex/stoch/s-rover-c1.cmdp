@@ -1,0 +1,45 @@
+cvariables (x)
+min-values (-500000)
+max-values (500000)
+bvariables (tp)
+nvariables (n)
+icvariables ()
+min-values ()
+max-values ()
+ibvariables ()
+avariables (a)
+
+action move (-10 <= a <= 10)
+
+tp'(tp
+	  ([1.0])
+	  ([x>=-10]
+	     ([x<=10]
+		   ([1.0])
+		   ([0.0]))
+		 ([0.0])))
+	
+x' ([x + a + n])
+
+noise
+
+n ([n <=5]
+	([n>=-5]
+		([legal])
+		([illegal]))
+	([illegal]))
+	
+reward ([x<=-40]
+         ([-Infinity])
+         ([x>=40]
+            ([-Infinity])
+		       (tp'
+		         (tp
+		           ([-1])
+		           ([10]))
+		         ([-1])) ))
+
+endaction
+
+discount 1.000000
+iterations 8

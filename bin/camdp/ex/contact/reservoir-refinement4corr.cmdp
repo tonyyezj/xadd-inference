@@ -1,0 +1,45 @@
+cvariables (x1 x2)
+min-values (0 0)
+max-values (500 500)
+bvariables ()
+icvariables()
+min-values ()
+max-values ()
+ibvariables()
+avariables(e)
+
+action drain (0 <= e<= 100)
+
+x1' ([45 * e + x1 -100 * e + 50 * e])
+
+x2' ([45 * e + x2 - 50 * e])
+
+reward 	([x1<=450]
+				([x2<=450]
+					([x1>=50]
+							([e])
+							([-100 + e] ))
+				([0] ))
+			([0]))
+												
+					
+endaction
+
+action no-drain (0 <= e <= 100)
+
+x1' ([45 * e + x1 -100 * e])
+x2' ([45 * e + x2])
+
+reward 	([x1<=450]
+				([x2<=450]
+						([x1>=50]
+							([e])
+							([-100 + e] ))
+				([0] ))
+			([0]))					
+					
+endaction
+
+
+discount 1.000000
+iterations 4
