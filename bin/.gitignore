@@ -1,3 +1,4 @@
+/bucketelim/
 /camdp/
 /graph/
 /hgm/
@@ -7,6 +8,7 @@
 /ml/
 /prefs/
 /sve/
+/CplexRunner.class
 /generator/
 /plot/
 /stn/
@@ -15,5 +17,3 @@
 /util/
 /xadd/
 /xaddorig/
-/CplexRunner.class
-/bucketelim/
