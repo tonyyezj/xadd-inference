@@ -1,1 +1,0 @@
-[sum(w_i * x_i) - sum(w_i * y_i) > epsilon] ([1.0]) ([0.0])

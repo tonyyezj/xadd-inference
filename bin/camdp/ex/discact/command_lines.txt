@@ -1,2 +1,0 @@
-src/camdp/ex/discact/knapsackM.cmdp 3 false true
-
