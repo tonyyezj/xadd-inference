@@ -19,8 +19,14 @@ import static java.lang.String.format;
 /**
  * Created by samuelkolb on 07/06/2017.
  *
- * @author Samuel Kolb
+ * @author Samuel Kolb, Tony Ye
  */
+
+/* NOTE: Only works for *max* for now.
+   Code needs to be modified to accommodate minimization as well. */
+/* See XADD code for the current max operator for reference. */
+
+
 public class ResolveMaximization {
 
 	private class ResolveKey {
