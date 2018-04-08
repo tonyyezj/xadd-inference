@@ -23,6 +23,8 @@ import bucketelim.NodeSearch;
 import bucketelim.VarSubstitution.Epsilon;
 import util.DevNullPrintStream;
 import util.Timer;
+import xadd.ResolveMaximization;
+import xadd.Variable;
 import xadd.XADD;
 import xadd.XADDParseUtils;
 import xadd.XADDUtils;
@@ -46,6 +48,7 @@ public class BucketElimination {
     public boolean SHOW_GRAPHS =false;
     public boolean SHOW_PLOTS = false;
     public static boolean  DISPLAY_RAW_FACTORS = false; 
+    public static boolean BETTERMAX = false;
     
     public static boolean TIEBREAK = false;
     public static boolean NAIVEORDER = true; // this is the linear elimination order (sequentially)
@@ -55,32 +58,94 @@ public class BucketElimination {
     public double CVAR_UB = 10;
     public static int XADDLIMIT = 1000; // limit on the XADD size for minibucket elimination
     
-    public static boolean RECOVER_HINGE_PTS = false; // non-recursive hinge point recovery for minibucket elimination
+    public static boolean RECOVER_HINGE_PTS = true; // non-recursive hinge point recovery for minibucket elimination
     public static boolean USEEXACT = true; // use the exact bucket elimination algorithm (this only outputs optimal value)
     										// if optimal assignments required, use the minibuckets one and set XADDLIMIT to high
-    public static boolean ONEPASS = true; // true = will choose the best instantiation for the current var, based on the current heuristic val.
+    public static boolean ONEPASS = false; // true = will choose the best instantiation for the current var, based on the current heuristic val.
 
     public static int NUM_VAR_IN_FACTOR = 30;
     public static int treeWidth = 1;
     
-    public static void main(String[] args) throws Exception {
-    	for (int i = 1; i <= 100; i++) {
-    	NUM_FACTORS = i;
+    
+    // constraint graph for the SBE paper
+    public static void GenerateConstraintGraph(String[] args) throws Exception {
+    	//for (int i = 5; i <= 5; i++) {
+    	NUM_FACTORS = 5;
     	String twString = increaseTW("( [x1 > x2] ( [x2 > x3] ( [x2 - x1] ) ( [x3 - x2] )) ( [x2 > x3] ( [x2 - x3] ) ( [x1 - x2] ) ) )", 1);
 		ArrayList<String> list = buildXADDStrings(twString);
 		BucketElimination be = buildBEProblem(list);
-		long runtime = be.solveBucketElim();
-		try(FileWriter fw = new FileWriter("results.txt", true);
+		Graph g = be.getConstraintGraph(be._alAllFactors);
+		g.launchViewer();
+		g.genDotFile("test.dot");
+		//long runtime = be.solveBucketElim();
+//		try(FileWriter fw = new FileWriter("results.txt", true);
+//			    BufferedWriter bw = new BufferedWriter(fw);
+//			    PrintWriter out = new PrintWriter(bw))
+//			{
+//			    out.println(String.valueOf(runtime));
+//			    //more code
+//			} catch (IOException e) {
+//			    //exception handling left as an exercise for the reader
+//			}
+		//System.out.println(String.valueOf(runtime));
+    	//}
+		
+		
+    }
+    
+    public static void main(String[] args) throws Exception {
+
+    	xorRuntimeData();
+    }
+    
+    public static void xorRuntimeData() throws Exception {
+    	
+    	NUM_FACTORS = 10;
+    	String twString = increaseTW("( [x1 > x2] ( [x2 > x3] ( [x2 - x1] ) ( [x3 - x2] )) ( [x2 > x3] ( [x2 - x3] ) ( [x1 - x2] ) ) )", 2);
+		ArrayList<String> list = buildXADDStrings(twString);
+		BucketElimination be = buildBEProblem(list);
+    	
+		ArrayList<Integer> runtime_BE = be.solveBucketElim2();
+		
+		//BE
+		try(FileWriter fw = new FileWriter("XOR_BE10.txt", true);
 			    BufferedWriter bw = new BufferedWriter(fw);
 			    PrintWriter out = new PrintWriter(bw))
 			{
-			    out.println(String.valueOf(runtime));
+			    out.println(String.valueOf(runtime_BE.get(0)) + "," + String.valueOf(runtime_BE.get(1)));
 			    //more code
 			} catch (IOException e) {
 			    //exception handling left as an exercise for the reader
 			}
-    	}
 		
+		for (int i = 1; i <= 20; i++) {
+	    	XADDLIMIT = i; // m parameter
+			//
+			ArrayList<Integer> runtime = be.solveMiniBucketElim2(XADDLIMIT);
+			
+			//mbe. format: runtime, objective value
+			try(FileWriter fw = new FileWriter("XOR_MBE10.txt", true);
+				    BufferedWriter bw = new BufferedWriter(fw);
+				    PrintWriter out = new PrintWriter(bw))
+				{
+				    out.println(String.valueOf(runtime.get(0)) + "," + String.valueOf(runtime.get(1)));
+				    //more code
+				} catch (IOException e) {
+				    //exception handling left as an exercise for the reader
+				}
+			
+			//search
+			try(FileWriter fw = new FileWriter("XOR_Search10.txt", true);
+				    BufferedWriter bw = new BufferedWriter(fw);
+				    PrintWriter out = new PrintWriter(bw))
+				{
+				    out.println(String.valueOf(runtime.get(2)) + "," + String.valueOf(runtime.get(3)));
+				    //more code
+				} catch (IOException e) {
+				    //exception handling left as an exercise for the reader
+				}
+		
+    	}
     }
 
 	public static void main2(String[] args) throws Exception {
@@ -128,6 +193,7 @@ public class BucketElimination {
 //	    PrintWriter writer = new PrintWriter(new FileOutputStream(new File("results.txt"), true /* append = true */));
 //	    writer.println(String.format("%d,%d", treeWidth, value));
 //	    writer.close();
+		
 	}
 	
 	//public static String string = "([x1 < x2] ([x2 < x3] ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ) ([x2 < x3] ([x3 < x4] ([x4 < x5] ([1]) ([0]) ) ([x4 < x5] ([0]) ([1]) ) ) ([x3 < x4] ([x4 < x5] ([0]) ([1]) ) ([x4 < x5] ([1]) ([0]) ) ) ) )";
@@ -173,12 +239,37 @@ public class BucketElimination {
 	}
 	
 
+    public Graph getConstraintGraph(ArrayList<Integer> factors) {
+    	
+        Graph g = new Graph(/*directed*/false, false, true, false);
+
+        for (Integer f : factors) {
+        	HashSet<String> vars = _context.collectVars(f);
+        	g.addBiLinks(f.toString(), vars);
+        	for (String v : vars) {
+        		g.addNodeColor(v, "lightblue");
+            	g.addNodeStyle(v, "filled");
+            	g.addNodeShape(v, "ellipse");
+        	}
+        	//System.out.println(f.toString() + " <-> " + vars);
+        	g.addNodeShape(f.toString(), "box");
+        	g.addNodeStyle(f.toString(), "filled");
+        	g.addNodeColor(f.toString(), "lightsalmon");
+        	String factor_label = _hmFactor2Name.get(f);
+        	if (factor_label == null)
+        		factor_label = "factor:" + f;
+        	g.addNodeLabel(f.toString(), factor_label);
+        }
+ 
+    	return g;
+    }
+	
 	public static BucketElimination buildBEProblem(ArrayList<String> xaddString) throws Exception {
     	
     	BucketElimination be = new BucketElimination();
 		for (int i = 0; i < xaddString.size(); i++) {
 			int xadd = ParseXADDString(be._context, xaddString.get(i));
-	        be._hmFactor2Name.put(xadd, "f"+i);
+	        be._hmFactor2Name.put(xadd, "r"+(i+1));
 	        be._alAllFactors.add(xadd);			
 	        
 	        if (false) {
@@ -295,10 +386,18 @@ public class BucketElimination {
 	}    
 	
     public int maxOutCVar(int obj, String cvar, double lb, double ub) {
-        XADDLeafMinOrMax max = _context.new XADDLeafMinOrMax(cvar, lb, ub, true /* is_max */, new DevNullPrintStream());
-        _context.reduceProcessXADDLeaf(obj, max, true);
-        int result = _context.reduceLP(max._runningResult);
-        return result;
+
+    	if (!BETTERMAX) {
+        	XADDLeafMinOrMax max = _context.new XADDLeafMinOrMax(cvar, lb, ub, true /* is_max */, new DevNullPrintStream());
+            _context.reduceProcessXADDLeaf(obj, max, true);   
+            int result = _context.reduceLP(max._runningResult);
+            return result;
+    	}
+    	else {
+            ResolveMaximization rm = new ResolveMaximization(_context, false);
+            int node = rm.maxOut(obj, Variable.real(cvar), ub, lb);
+            return node;
+    	}
     }	
     
     public int maxOutBVar(int obj, String bvar) {
@@ -424,6 +523,59 @@ public class BucketElimination {
 	    //_context.getGraph(result).launchViewer("Final result " + result);
 	
 	    return value;
+	}
+    
+    @SuppressWarnings("unchecked")
+   	public ArrayList<Integer> solveBucketElim2() {
+    	
+    	ArrayList<Integer> results = new ArrayList<Integer>();
+    	
+    	Timer timer = new Timer();
+    	List<String> var_order = getTWMinVarOrder();
+
+	    // Do bucket/variable elimination
+    	ArrayList<Integer> factors = (ArrayList<Integer>)_alAllFactors.clone();
+	    ArrayList<Integer> factors_with_var = new ArrayList<Integer>();
+	    ArrayList<Integer> factors_without_var = new ArrayList<Integer>();
+	    
+	    timer.ResetTimer();
+	    for (String var : var_order) {
+	        System.out.println("Eliminating: " + var + ", " + factors.size() + " factors (max: " + largestFactorSize(factors) + " nodes)");
+	
+	        // Split factors into sets that contain and do not contain the variable
+	        splitFactors(var, factors, factors_with_var, factors_without_var);
+	        System.out.println(" - factors with var: " + factors_with_var.size() + ", factors without var: "
+	                + factors_without_var.size());
+
+	        factors.clear();
+	        factors.addAll(factors_without_var);
+	        if (factors_with_var.size() > 0) {
+	        	int projected_factor = createBucket(factors_with_var,var);
+	        	factors.add(projected_factor);
+	        }
+
+	        
+	        System.out.println(" - remaining factors: " + factors.size());
+	
+	        // Flush caches
+	        _context.clearSpecialNodes();
+	        for (Integer xadd : _alAllFactors)
+	            _context.addSpecialNode(xadd);
+	        for (Integer f : factors)
+	            _context.addSpecialNode(f);
+	        _context.flushCaches();
+	    }
+	
+	    // Done variable elimination, have a set of factors just over query vars,
+	    // need to compute normalizer
+	    Integer result = combineFactors(factors);
+	    double result_val = ((DoubleExpr)((XADDTNode)_context.getNode(result))._expr)._dConstVal;
+	    long value = timer.GetCurElapsedTime();
+	    System.out.println("solveBucketElim Done (" + value + " ms): result value " + result_val + /*" [size: " + _context.getNodeCount(result) + ", vars: " + _context.collectVars(result) + "]"*/ "\n");
+	    //_context.getGraph(result).launchViewer("Final result " + result);
+	    results.add((int) value);
+	    results.add((int) result_val);
+	    return results;
 	}
     
 
@@ -590,6 +742,110 @@ public class BucketElimination {
 	}
 			
 	
+	public ArrayList<Integer> solveMiniBucketElim2(int maxSize) {
+    	
+		ArrayList<Integer> runtimeObj = new ArrayList<Integer>();
+    	Timer timer = new Timer();
+    	varOrder = getTWMinVarOrder();
+    		
+	    // Do bucket/variable elimination
+    	ArrayList<Integer> factors = (ArrayList<Integer>)_alAllFactors.clone();
+	    ArrayList<Integer> factors_with_var = new ArrayList<Integer>();
+	    ArrayList<Integer> factors_without_var = new ArrayList<Integer>();
+	    
+	    ArrayList<Integer> projected_factors= new ArrayList<Integer>();
+	    
+	    ArrayList<ArrayList<Integer>> projected_factorsByBucket=new ArrayList<ArrayList<Integer>>(); //projected factors/messages produced by bucket p: h^p_js
+	    ArrayList<ArrayList<Integer>> original_factorsByBucket=new ArrayList<ArrayList<Integer>>(); //original factors in bucket p: F_{p_j}s 
+	    ArrayList<ArrayList<Integer>> messagesByBucket=new ArrayList<ArrayList<Integer>>(); //messages in bucket p: h_{p_j}s
+	    
+	    //set of decisions and ones arising from 'max' for each bucket
+	    ArrayList<HashSet<ExprDec>> decisionsByBucket = new ArrayList<HashSet<ExprDec>>();
+	    
+	    timer.ResetTimer();
+	    for (int i = 0; i < varOrder.size(); i++) {
+	    	String var = varOrder.get(i);
+	        System.out.println("Eliminating: " + var + ", " + factors.size() + " factors (max: " + largestFactorSize(factors) + " nodes)");
+	
+	        // Split factors into sets that contain and do not contain the variable
+	        splitFactors(var, factors, factors_with_var, factors_without_var);
+	
+	        System.out.println(" - with var: " + factors_with_var.size() + ", without var: " + factors_without_var.size());
+	        
+	        ArrayList<Integer> originalFactors=new ArrayList<Integer>();
+	        ArrayList<Integer> messages=new ArrayList<Integer>();
+	        HashSet<ExprDec> decisionSet = new HashSet<ExprDec>();
+	        
+	        splitOriginalFactorsMessages(factors_with_var, originalFactors, messages);        
+	        original_factorsByBucket.add(originalFactors);
+	        // add constant messages into the last bucket!
+	        if (i == varOrder.size() - 1) {
+	        	messages.addAll(factors_without_var);
+	        }
+	        messagesByBucket.add(messages);
+	        
+	          
+	        factors.clear();
+	        projected_factors=createMiniBuckets(maxSize,factors_with_var,var, decisionSet);
+	        decisionsByBucket.add(decisionSet);
+	        
+    	     // adding new factors and all without the variable to the factors list
+
+	        factors.addAll(factors_without_var);
+	        factors.addAll(projected_factors);
+	        
+	        projected_factorsByBucket.add(projected_factors);
+	        
+	        System.out.println(" - remaining factors: " + factors.size());
+
+//	        if (USEEXACT) {
+//		        _context.clearSpecialNodes();
+//		        for (Integer xadd : _alAllFactors)
+//		            _context.addSpecialNode(xadd);
+//		        for (Integer f : factors)
+//		            _context.addSpecialNode(f);
+//		        _context.flushCaches();
+//	        }
+	        
+	        // Flush caches
+	        _context.clearSpecialNodes();
+	        for (Integer xadd : _alAllFactors)
+	            _context.addSpecialNode(xadd);
+	        for (Integer f : factors)
+	            _context.addSpecialNode(f);
+	        for (ArrayList<Integer> listMessages : messagesByBucket)
+		        for (Integer message : listMessages)
+		        	_context.addSpecialNode(message);
+	        for (ArrayList<Integer> listOriginalFactors : original_factorsByBucket)
+		        for (Integer originalFactor : listOriginalFactors)
+		        	_context.addSpecialNode(originalFactor);	
+	        for (ArrayList<Integer> listProjectedFactors : projected_factorsByBucket)
+		        for (Integer projected_Factor : listProjectedFactors)
+		        	_context.addSpecialNode(projected_Factor);	        	        
+	        _context.flushCaches();
+	    }
+
+	    // Done variable elimination, have a set of factors just over query vars,
+	    // need to compute normalizer
+	    Integer result = combineFactors(factors);
+	       
+	    double result_val = ((DoubleExpr)((XADDTNode)_context.getNode(result))._expr)._dConstVal;
+	    Integer runtime1 = (int) timer.GetCurElapsedTime();
+	    System.out.println("MiniBucket Approx Done (" + runtime1 + " ms): (approx?) value " + result_val + /*" [size: " + _context.getNodeCount(result) + ", vars: " + _context.collectVars(result) + "]"*/ "\n");
+	    //_context.getGraph(result).launchViewer("Final result " + result);
+	    
+	    //HashMap<String,VarSubstitution> assignment=AStarWithMiniBucket(projected_factorsByBucket/**h^p_js**/,original_factorsByBucket/**F_{p_j}s**/,  messagesByBucket/**h_{p_j}s**/,varOrder, decisionsByBucket);
+        double result_search = AStarWithMiniBucket(projected_factorsByBucket/**h^p_js**/,original_factorsByBucket/**F_{p_j}s**/,  messagesByBucket/**h_{p_j}s**/,varOrder, decisionsByBucket);
+	    //System.out.println("Assigment for variables: "+ assignment.toString());
+	    Integer runtime2 = (int) timer.GetCurElapsedTime();
+	    System.out.println("Search Time elapsed: " + runtime2 + " ms");
+	    runtimeObj.add(runtime1);
+	    runtimeObj.add((int) result_val);
+	    runtimeObj.add(runtime2);
+	    runtimeObj.add((int) result_search);
+	    return runtimeObj;
+	}
+	
 	public long solveMiniBucketElim(int maxSize) {
     	
     	Timer timer = new Timer();
@@ -680,7 +936,7 @@ public class BucketElimination {
 	    System.out.println("solveMiniBucketElim Done (" + timer.GetCurElapsedTime() + " ms): (approx?) value " + result_val + /*" [size: " + _context.getNodeCount(result) + ", vars: " + _context.collectVars(result) + "]"*/ "\n");
 	    //_context.getGraph(result).launchViewer("Final result " + result);
 	
-	    HashMap<String,VarSubstitution> assignment=AStarWithMiniBucket(projected_factorsByBucket/**h^p_js**/,original_factorsByBucket/**F_{p_j}s**/,  messagesByBucket/**h_{p_j}s**/,varOrder, decisionsByBucket);
+	    double result_search = AStarWithMiniBucket(projected_factorsByBucket/**h^p_js**/,original_factorsByBucket/**F_{p_j}s**/,  messagesByBucket/**h_{p_j}s**/,varOrder, decisionsByBucket);
         //System.out.println("Assigment for variables: "+ assignment.toString());
         long timeElapsed = timer.GetCurElapsedTime();
 	    System.out.println("Time elapsed: " + timeElapsed + " ms");
@@ -743,7 +999,9 @@ public class BucketElimination {
 		};
 	}
 
-	HashMap<String,VarSubstitution> AStarWithMiniBucket(
+	
+	//HashMap<String,VarSubstitution>
+	double AStarWithMiniBucket(
 		ArrayList<ArrayList<Integer>> projected_factorsByBucket,
 		ArrayList<ArrayList<Integer>> originalFactorsByBucket,
 		ArrayList<ArrayList<Integer>> messagesByBucket,
@@ -776,7 +1034,7 @@ public class BucketElimination {
 	    		System.out.println("F value: " + node.getF_val());		    		
 	    		System.out.println(node.toString());
 	    		System.out.println("# different (partial) nodes explored: " + (numNodesExplored - 1));
-	    		return node.getPartialAssignment();
+	    		return node.getF_val();
 	    		
 	    	}
 	    	//expand node 

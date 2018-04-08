@@ -23,7 +23,7 @@ public class TestXADD {
      */
 
 	
-	public static void main(String[] args) throws Exception {
+	public static void main101(String[] args) throws Exception {
 
         // Elim Example 3: Integrating out x for [z * \delta(x - y)] for XADDs y and z
         // Note: it is assumed that z contains references to x that will be substituted according to y,
@@ -56,6 +56,24 @@ public class TestXADD {
         // Pause
 
 	}
+	
+    public static void main(String[] args) throws Exception {
+        // Test XADD substitution and max
+       XADD context = new XADD();
+
+       //Simple XADD with abs function
+       int dd = context.buildCanonicalXADDFromFile("./src/xadd/ex/testMax.xadd");
+       context.getGraph(dd).launchViewer("Original");
+
+       XADDLeafMinOrMax max = context.new XADDLeafMinOrMax("x1", -100, 100, true/* is_max */, System.out);
+       context.reduceProcessXADDLeaf(dd, max, false);
+       ResolveMaximization rm = new ResolveMaximization(context, true);
+       int node = rm.maxOut(dd, Variable.real("x1"), 100, -100);
+       int maxDD = max._runningResult;
+    		   
+       context.getGraph(maxDD).launchViewer("maxOutDD2");
+    
+    }
 	
     public static void main10(String[] args) throws Exception {
     	//testMinOut(args);
@@ -547,21 +565,8 @@ public class TestXADD {
     
     }
 
-    public static void testMinOut(String[] args) throws Exception {
-        // Test XADD substitution and max
-       XADD context = new XADD();
-
-       //Simple XADD with abs function
-       int dd = context.buildCanonicalXADDFromFile("./src/xadd/ex/testMinOut.xadd");
-       context.getGraph(dd).launchViewer("Original");
-
-       XADDLeafMinOrMax max = context.new XADDLeafMinOrMax("t4", -100, 100, false/* is_max */, System.out);
-       context.reduceProcessXADDLeaf(dd, max, false);
-       int minDD = max._runningResult;
-    		   
-       context.getGraph(minDD).launchViewer("minOutDD");
     
-    }
+    
     
     
     public static void testBVarSubs(String[] args) throws Exception {

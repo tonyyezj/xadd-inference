@@ -1,0 +1,45 @@
+graph G {
+  overlap = false;
+
+graph [ fontname = "Helvetica",fontsize="16",ratio = "auto",
+        size="7.5,10",rankdir="LR",ranksep="2.00" ];
+node [fontsize="16"];
+edge [fontsize="16"];
+"t4" [fillcolor=lightblue,color=black,shape=ellipse,style=filled];
+"17" [label="Disjunctive 1",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"182" [label="Gap 3",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"173" [label="p4",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"141" [label="Disjunctive 4",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"176" [label="Gap 1",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"133" [label="p3",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"101" [label="Disjunctive 3",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"179" [label="Gap 2",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"6" [label="Min. Time: +t1",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"7" [label="Min. Time: +t2",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"8" [label="Min. Time: +t3",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"9" [label="Min. Time: +t4",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"93" [label="p2",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"61" [label="Disjunctive 2",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"t1" [fillcolor=lightblue,color=black,shape=ellipse,style=filled];
+"t2" [fillcolor=lightblue,color=black,shape=ellipse,style=filled];
+"53" [label="p1",fillcolor=lightsalmon,color=black,shape=box,style=filled];
+"t3" [fillcolor=lightblue,color=black,shape=ellipse,style=filled];
+"17" -- "t1" ;
+"182" -- "t4" ;
+"182" -- "t3" ;
+"173" -- "t4" ;
+"141" -- "t4" ;
+"176" -- "t1" ;
+"176" -- "t2" ;
+"133" -- "t3" ;
+"101" -- "t3" ;
+"179" -- "t2" ;
+"179" -- "t3" ;
+"6" -- "t1" ;
+"7" -- "t2" ;
+"8" -- "t3" ;
+"9" -- "t4" ;
+"93" -- "t2" ;
+"61" -- "t2" ;
+"53" -- "t1" ;
+}

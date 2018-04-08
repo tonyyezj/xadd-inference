@@ -1,10 +1,33 @@
-digraph G {
-	graph [fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", ranksep="2.00"];
+graph G {
+	graph [overlap=false, fontname=Helvetica, fontsize=16, ratio=auto, size="7.5,10", rankdir=LR, ranksep="2.00"];
 	node [label="\N", fontsize=16];
-	graph [bb="0,0,537,218"];
-	611 [label="(1 + (-0.13266479 * x2)) > 0", fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="267,199", width="3.9462", height="0.51069"];
-	457 [label="(138.22964627 + (0.09304717 * x2))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="128,18", width="3.5625", height="0.5"];
-	557 [label="(140.91675757 + (-0.26343789 * x2))", fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="406,18", width="3.6458", height="0.5"];
-	611 -> 457 [color=black, style=dashed, pos="e,141.23,36.035 253.42,180.51 228.69,148.67 176.24,81.121 147.62,44.271"];
-	611 -> 557 [color=black, style=solid, pos="e,392.77,36.035 280.58,180.51 305.31,148.67 357.76,81.121 386.38,44.271"];
+	edge [fontsize=16];
+	graph [bb="0,0,177.19,514.17"];
+	67 [label=r4, fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="143.42,179.36", width="0.75", height="0.5"];
+	25 [label=r1, fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="106.09,426.21", width="0.75", height="0.5"];
+	39 [label=r2, fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="47.136,330.99", width="0.75", height="0.5"];
+	x1 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="144.68,495.78", width="0.75", height="0.51069"];
+	81 [label=r5, fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="67.101,87.327", width="0.75", height="0.5"];
+	x2 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="28.165,413.9", width="0.75", height="0.51069"];
+	x3 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="109.14,341.45", width="0.75", height="0.51069"];
+	x4 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="123.33,261.49", width="0.75", height="0.51069"];
+	x5 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="59.809,170.25", width="0.75", height="0.51069"];
+	53 [label=r3, fillcolor=lightsalmon, color=black, shape=box, style=filled, pos="58.056,255.02", width="0.75", height="0.5"];
+	x6 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="150.19,96.641", width="0.75", height="0.51069"];
+	x7 [fillcolor=lightblue, color=black, shape=ellipse, style=filled, pos="27,18.385", width="0.75", height="0.51069"];
+	67 -- x4 [pos="138.96,197.59 135.63,211.2 131.1,229.71 127.78,243.31"];
+	67 -- x5 [pos="116.04,176.38 106.61,175.35 96.065,174.2 86.677,173.18"];
+	67 -- x6 [pos="144.92,161 146.03,147.39 147.55,128.9 148.67,115.23"];
+	25 -- x1 [pos="116.23,444.49 122.04,454.95 129.28,468.02 135.01,478.34"];
+	25 -- x2 [pos="78.836,421.9 70.936,420.66 62.328,419.3 54.486,418.06"];
+	25 -- x3 [pos="106.75,407.82 107.26,393.7 107.96,374.28 108.47,360.1"];
+	39 -- x2 [pos="42.926,349.39 39.782,363.13 35.505,381.82 32.364,395.55"];
+	39 -- x3 [pos="74.15,335.55 77.022,336.03 79.94,336.52 82.803,337.01"];
+	39 -- x4 [pos="67.156,312.73 79.502,301.47 95.145,287.2 106.79,276.58"];
+	81 -- x5 [pos="65.483,105.73 64.283,119.38 62.653,137.91 61.448,151.61"];
+	81 -- x6 [pos="94.307,90.377 103.68,91.427 114.16,92.602 123.49,93.648"];
+	81 -- x7 [pos="56.565,69.214 50.532,58.841 43.002,45.895 37.051,35.665"];
+	53 -- x3 [pos="68.889,273.35 77.792,288.41 90.311,309.6 99.014,324.32"];
+	53 -- x4 [pos="85.361,257.73 88.994,258.09 92.718,258.45 96.346,258.81"];
+	53 -- x5 [pos="58.436,236.63 58.729,222.51 59.13,203.09 59.424,188.9"];
 }

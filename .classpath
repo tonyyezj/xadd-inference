@@ -21,11 +21,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/gurobi-javadoc.jar"/>
 	<classpathentry kind="lib" path="lib/gurobi.jar"/>
-	<classpathentry kind="lib" path="C:/Program Files/IBM/ILOG/CPLEX_Studio1271/cplex/lib/cplex.jar">
-		<attributes>
-			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="C:/Program Files/IBM/ILOG/CPLEX_Studio1271/cplex/bin/x64_win64"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="lib/lpsolve55j.jar">
 		<attributes>
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="C:/Windows/System32"/>
