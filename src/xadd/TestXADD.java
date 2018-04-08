@@ -58,13 +58,19 @@ public class TestXADD {
 	}
 	
     public static void main(String[] args) throws Exception {
+
+    	testNewMax();
+    }
+	
+    public static void testNewMax() throws Exception {
         // Test XADD substitution and max
        XADD context = new XADD();
 
        //Simple XADD with abs function
        int dd = context.buildCanonicalXADDFromFile("./src/xadd/ex/testMax.xadd");
        context.getGraph(dd).launchViewer("Original");
-
+       
+       // Test the new max
        XADDLeafMinOrMax max = context.new XADDLeafMinOrMax("x1", -100, 100, true/* is_max */, System.out);
        context.reduceProcessXADDLeaf(dd, max, false);
        ResolveMaximization rm = new ResolveMaximization(context, true);
@@ -72,9 +78,8 @@ public class TestXADD {
        int maxDD = max._runningResult;
     		   
        context.getGraph(maxDD).launchViewer("maxOutDD2");
-    
     }
-	
+    
     public static void main10(String[] args) throws Exception {
     	//testMinOut(args);
 		 
