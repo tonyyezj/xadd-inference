@@ -1,7 +1,8 @@
 xadd-inference -- Implementation of Extended ADDs (XADDs) and 
                   XADD-based inference algorithms.
 
-Copyright (C) 2010, Scott Sanner (ssanner [@] gmail.com)
+Copyright (C) 2018, Zhi Jiang (Tony) Ye (tonyyezj [@] gmail.com)
+		    Scott Sanner (ssanner [@] gmail.com)
                     Karina Valdivia Delgado (karinaval [@] gmail.com)
 
 License: MPL 1.1 (with exceptions for 3rd party software & data)
